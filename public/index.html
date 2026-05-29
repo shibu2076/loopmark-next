@@ -1,0 +1,646 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LoopMark — YouTube練習プレイヤー</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',sans-serif;background:#f8f8f6;color:#1a1a18;height:100vh;display:flex;flex-direction:column;overflow:hidden}
+.topbar{display:flex;align-items:center;gap:8px;padding:8px 12px;background:#fff;border-bottom:1px solid #e8e8e6;flex-shrink:0}
+.logo{font-size:18px;font-weight:700;color:#1a1a18;letter-spacing:-0.5px;white-space:nowrap}
+.logo span{color:#1D9E75}
+.url-input{flex:1;padding:6px 10px;border:1px solid #ddd;border-radius:7px;font-size:13px;background:#f8f8f6;outline:none;min-width:0}
+.url-input:focus{border-color:#1D9E75;background:#fff}
+.btn{display:inline-flex;align-items:center;gap:4px;padding:6px 12px;border-radius:7px;border:1px solid #ddd;background:#fff;color:#1a1a18;font-size:12px;cursor:pointer;font-family:inherit;white-space:nowrap;transition:background 0.1s}
+.btn:hover{background:#f0f0ee}
+.btn.primary{background:#1D9E75;border-color:#1D9E75;color:#fff}
+.btn.primary:hover{background:#0F6E56}
+.btn.active{background:#1D9E75;border-color:#1D9E75;color:#fff}
+.btn.danger{border-color:#f09595;color:#A32D2D}
+.btn.danger:hover{background:#FCEBEB}
+.btn:disabled{opacity:0.4;cursor:default;pointer-events:none}
+
+.content{display:flex;flex:1;overflow:hidden}
+.left-panel{display:flex;flex-direction:column;width:340px;flex-shrink:0;border-right:1px solid #e8e8e6;overflow-y:auto;background:#fff}
+.video-area{flex:1;display:flex;flex-direction:column;background:#111;position:relative}
+.right-panel{width:0;flex-shrink:0;border-left:1px solid #e8e8e6;overflow:hidden;transition:width 0.2s;background:#f8f8f6}
+.right-panel.visible{width:340px}
+.right-panel iframe{width:100%;height:100%;border:none}
+
+/* Video */
+#player-wrap{position:relative;width:100%;flex:1;background:#000;min-height:0}
+#player-wrap>div{position:absolute;inset:0}
+#player-wrap iframe{width:100%;height:100%;border:none}
+.placeholder{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;color:#666;background:#111}
+.placeholder i{font-size:40px}
+.placeholder p{font-size:13px}
+
+/* AB overlay bar */
+.ab-overlay{position:absolute;bottom:0;left:0;right:0;background:linear-gradient(transparent,rgba(0,0,0,0.7));padding:8px 12px 10px;display:flex;align-items:center;gap:8px}
+.ab-overlay-btn{padding:5px 10px;border-radius:6px;border:1.5px solid rgba(255,255,255,0.6);background:rgba(0,0,0,0.4);color:#fff;font-size:12px;cursor:pointer;font-family:inherit;backdrop-filter:blur(4px);transition:all 0.1s;white-space:nowrap}
+.ab-overlay-btn:hover{background:rgba(255,255,255,0.2)}
+.ab-overlay-btn.set{border-color:#1D9E75;background:rgba(29,158,117,0.4);color:#fff}
+.ab-overlay-btn.loop-on{background:#1D9E75;border-color:#1D9E75}
+.ab-time-display{font-size:11px;color:rgba(255,255,255,0.7);font-family:monospace;flex:1;text-align:center}
+
+/* Controls panel */
+.ctrl-section{padding:10px 12px;border-bottom:1px solid #f0f0ee}
+.ctrl-label{font-size:10px;font-weight:600;color:#aaa;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px}
+.speed-num{font-size:24px;font-weight:700;text-align:center;margin-bottom:6px}
+.speed-row{display:flex;align-items:center;gap:6px}
+.speed-adj{width:28px;height:28px;border-radius:50%;border:1px solid #ddd;background:#f5f5f3;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.speed-adj:hover{background:#e8e8e6}
+.speed-row input[type=range]{flex:1;accent-color:#1D9E75}
+.presets{display:flex;gap:4px;flex-wrap:wrap;margin-top:6px}
+.preset-btn{padding:4px 8px;border-radius:12px;border:1px solid #ddd;background:#f5f5f3;font-size:11px;cursor:pointer;transition:all 0.1s}
+.preset-btn:hover{border-color:#1D9E75;color:#1D9E75}
+.preset-btn.active{background:#1a1a18;color:#fff;border-color:#1a1a18}
+
+/* AB section in panel */
+.ab-panel{display:flex;gap:6px;margin-bottom:6px}
+.ab-pt{flex:1;border:1px solid #e0e0de;border-radius:8px;padding:6px 8px;text-align:center;background:#fafaf8}
+.ab-pt.set{border-color:#1D9E75;background:#E1F5EE}
+.ab-pt-label{font-size:10px;font-weight:600;color:#aaa;margin-bottom:2px}
+.ab-pt.set .ab-pt-label{color:#0F6E56}
+.ab-pt-time{font-size:15px;font-weight:700;font-family:monospace;color:#ccc}
+.ab-pt.set .ab-pt-time{color:#1D9E75}
+.ab-btns{display:flex;gap:5px}
+.ab-status-sm{font-size:11px;color:#aaa;margin-top:4px}
+.ab-status-sm.on{color:#1D9E75;font-weight:500}
+
+/* Marks */
+.mark-list{display:flex;flex-direction:column;gap:4px;max-height:160px;overflow-y:auto;margin-bottom:6px}
+.mark-item{display:flex;align-items:center;gap:6px;padding:5px 8px;border-radius:7px;border:1px solid #e8e8e6;background:#fafaf8;cursor:pointer}
+.mark-item:hover{border-color:#1D9E75;background:#f0faf6}
+.m-time{font-family:monospace;font-size:11px;color:#1D9E75;min-width:44px}
+.m-label{font-size:12px;color:#333;flex:1}
+.m-del{font-size:12px;color:#ccc;border:none;background:none;cursor:pointer;padding:0 2px}
+.m-del:hover{color:#E24B4A}
+.empty-marks{font-size:12px;color:#aaa;padding:4px 0}
+.add-mark-row{display:flex;gap:5px}
+.add-mark-row input{flex:1;padding:5px 8px;border:1px solid #ddd;border-radius:7px;font-size:12px;background:#fff;outline:none;font-family:inherit;min-width:0}
+.add-mark-row input:focus{border-color:#1D9E75}
+
+.toast{position:fixed;bottom:16px;left:50%;transform:translateX(-50%);background:#1a1a18;color:#fff;padding:6px 16px;border-radius:16px;font-size:12px;opacity:0;transition:opacity 0.3s;pointer-events:none;z-index:999;white-space:nowrap}
+.toast.show{opacity:1}
+</style>
+</head>
+<body>
+<!-- Top bar -->
+<div class="topbar">
+  <div class="logo">Loop<span>Mark</span></div>
+  <input type="text" id="yt-url" class="url-input" placeholder="YouTubeのURL（通常・Shorts両対応）">
+  <button class="btn primary" onclick="loadVideo()"><i class="ti ti-player-play"></i> 読み込む</button>
+  <button class="btn" id="btn-2pane" onclick="togglePane()"><i class="ti ti-layout-columns"></i> 2画面</button>
+  <button class="btn" onclick="openSearchWindow()" title="別ウィンドウで検索（YouTube・歌詞など）"><i class="ti ti-world-search"></i> 検索窓</button>
+</div>
+
+<div class="content" style="position:relative">
+  <!-- Left controls panel -->
+  <div class="left-panel" id="left-panel">
+    <!-- Speed -->
+    <div style="display:flex;justify-content:flex-end;padding:6px 8px 0">
+      <button id="btn-left" onclick="toggleLeft()" style="width:26px;height:26px;background:#e8e8e6;border:1px solid #ccc;border-radius:6px;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0;color:#444">
+        <i class="ti ti-chevron-left" id="left-icon" style="font-size:13px"></i>
+      </button>
+    </div>
+    <div class="ctrl-section">
+      <div class="ctrl-label">再生速度</div>
+      <div class="speed-num" id="speed-num">1.00x</div>
+      <div class="speed-row">
+        <button class="speed-adj" onclick="adjSpeed(-0.05)">−</button>
+        <input type="range" id="speed-range" min="0" max="100" step="1" value="41" oninput="onSlider(this.value)">
+        <button class="speed-adj" onclick="adjSpeed(0.05)">+</button>
+      </div>
+      <div class="presets" id="presets"></div>
+    </div>
+
+    <!-- AB -->
+    <div class="ctrl-section">
+      <div class="ctrl-label">AB リピート（動画上のボタンでもセット可）</div>
+      <div class="ab-panel">
+        <div class="ab-pt" id="ab-pt-a" onclick="togglePoint('A')" style="cursor:pointer" title="クリックで再セット／解除">
+          <div class="ab-pt-label">A 点</div>
+          <div class="ab-pt-time" id="a-time">--:--</div>
+        </div>
+        <div class="ab-pt" id="ab-pt-b" onclick="togglePoint('B')" style="cursor:pointer" title="クリックで再セット／解除">
+          <div class="ab-pt-label">B 点</div>
+          <div class="ab-pt-time" id="b-time">--:--</div>
+        </div>
+      </div>
+      <div style="margin-bottom:8px">
+        <div style="display:flex;justify-content:space-between;font-size:11px;color:#aaa;margin-bottom:3px">
+          <span id="seek-current">0:00</span>
+          <span id="seek-duration">0:00</span>
+        </div>
+        <input type="range" id="seek-bar" min="0" max="100" step="0.1" value="0" style="width:100%;accent-color:#1D9E75" oninput="onSeekBar(this.value)" onchange="onSeekBarEnd(this.value)" disabled>
+      </div>
+      <div class="ab-btns" style="margin-bottom:5px">
+        <button class="btn" style="font-size:11px;padding:5px 8px" onclick="setPoint('A')" id="set-a-btn" disabled>A点セット</button>
+        <button class="btn" style="font-size:11px;padding:5px 8px" onclick="setPoint('B')" id="set-b-btn" disabled>B点セット</button>
+        <button class="btn active" style="font-size:11px;padding:5px 8px" id="loop-btn" onclick="toggleLoop()" disabled><i class="ti ti-repeat"></i> OFF</button>
+        <button class="btn danger" style="font-size:11px;padding:5px 8px" onclick="clearAB()">クリア</button>
+      </div>
+      <div style="display:flex;gap:4px;flex-wrap:wrap">
+        <button class="btn" style="font-size:11px;padding:5px 8px" id="play-btn" onclick="togglePlay()" disabled><i class="ti ti-player-play"></i> 再生</button>
+        <button class="btn" style="font-size:11px;padding:5px 8px" id="back-a-btn" onclick="backToA()" disabled><i class="ti ti-arrow-back-up"></i> A点へ</button>
+        <button class="btn" style="font-size:11px;padding:5px 8px" id="back05-btn" onclick="seekRel(-0.5)" disabled>−0.5秒</button>
+        <button class="btn" style="font-size:11px;padding:5px 8px" id="back5-btn" onclick="seekRel(-5)" disabled>−5秒</button>
+        <button class="btn" style="font-size:11px;padding:5px 8px" id="back10-btn" onclick="seekRel(-10)" disabled>−10秒</button>
+      </div>
+      <div class="ab-status-sm" id="ab-status">A・B点をセットするとループ再生できます</div>
+    </div>
+
+    <!-- Marks -->
+    <div class="ctrl-section">
+      <div class="ctrl-label">マークポイント</div>
+      <div class="mark-list" id="mark-list">
+        <div class="empty-marks">まだマークがありません</div>
+      </div>
+      <div class="add-mark-row" style="margin-bottom:5px">
+        <input type="text" id="mark-label" placeholder="メモ（例: サビの入り）">
+        <button class="btn" id="add-mark-btn" onclick="addMark()" disabled style="font-size:11px;padding:5px 8px"><i class="ti ti-bookmark"></i> 今の位置</button>
+      </div>
+      <button class="btn" id="save-ab-btn" onclick="saveAB()" disabled style="font-size:11px;padding:5px 8px;width:100%"><i class="ti ti-repeat"></i> 現在のAB点を保存</button>
+    </div>
+  </div>
+
+  <!-- Video area -->
+  <div class="video-area" id="video-area">
+    <div id="player-wrap" style="flex:1;position:relative">
+      <div class="placeholder" id="placeholder">
+        <i class="ti ti-brand-youtube"></i>
+        <p>URLを入力して読み込む</p>
+      </div>
+      <div id="yt-player"></div>
+    </div>
+    <!-- AB overlay on video -->
+    <div class="ab-overlay">
+      <button class="ab-overlay-btn" id="ov-a" onclick="setPoint('A')" disabled>A点セット</button>
+      <div class="ab-time-display" id="ov-time">再生時間: --:--</div>
+      <button class="ab-overlay-btn" id="ov-loop" onclick="toggleLoop()" disabled><i class="ti ti-repeat"></i> ループ</button>
+      <button class="ab-overlay-btn" id="ov-b" onclick="setPoint('B')" disabled>B点セット</button>
+    </div>
+  </div>
+
+  <!-- Resizer -->
+  <div id="resizer" style="width:5px;background:#e0e0de;cursor:col-resize;flex-shrink:0;transition:background 0.1s" onmouseenter="this.style.background='#1D9E75'" onmouseleave="this.style.background='#e0e0de'"></div>
+  <!-- Right panel (search) -->
+  <div class="right-panel" id="right-panel" style="display:flex;flex-direction:column">
+    <!-- Web検索パネル -->
+    <div style="display:flex;flex-direction:column;flex:1;overflow:hidden">
+      <div style="padding:8px;background:#fff;border-bottom:1px solid #e8e8e6;display:flex;gap:6px;flex-shrink:0">
+        <input type="text" id="web-search-input" placeholder="検索キーワードを入力..." style="flex:1;padding:6px 10px;border:1px solid #ddd;border-radius:7px;font-size:12px;outline:none;font-family:inherit">
+        <button class="btn primary" onclick="doWebSearch()" style="font-size:11px;padding:6px 10px;flex-shrink:0">検索</button>
+      </div>
+      <iframe id="search-frame" src="about:blank" style="flex:1;border:none;width:100%" title="検索結果" sandbox="allow-scripts allow-forms allow-same-origin allow-popups allow-popups-to-escape-sandbox allow-top-navigation allow-top-navigation-by-user-activation"></iframe>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+<script>
+const PRESETS=[0.3,0.5,0.7,1.0,1.2,1.5,2.0];
+let currentSpeed=1.0,player=null,playerReady=false;
+let videoTitles=JSON.parse(localStorage.getItem('lm_titles')||'{}');
+let abA=null,abB=null,looping=false,loopInterval=null,timeInterval=null;
+let marks=JSON.parse(localStorage.getItem('lm_marks')||'{}'),currentVideoId=null;
+
+function fmt(s){if(s===null||s===undefined)return'--:--';const m=Math.floor(s/60),sec=Math.floor(s%60);return m+':'+String(sec).padStart(2,'0')}
+function extractVideoId(url){const m=url.match(/(?:v=|youtu\.be\/|shorts\/)([A-Za-z0-9_-]{11})/);return m?m[1]:null}
+
+// 2 pane toggle
+let paneVisible=false;
+function togglePane(){
+  paneVisible=!paneVisible;
+  document.getElementById('right-panel').classList.toggle('visible',paneVisible);
+  document.getElementById('btn-2pane').classList.toggle('active',paneVisible);
+}
+
+// Speed
+function buildPresets(){
+  document.getElementById('presets').innerHTML=PRESETS.map(s=>`<button class="preset-btn${s===1.0?' active':''}" onclick="setSpeedVal(${s})">${s.toFixed(1)}</button>`).join('');
+}
+function setSpeedVal(s){
+  currentSpeed=Math.round(s*100)/100;
+  document.getElementById('speed-num').textContent=currentSpeed.toFixed(2)+'x';
+  document.getElementById('speed-range').value=Math.round((currentSpeed-0.3)/(2.0-0.3)*100);
+  document.querySelectorAll('.preset-btn').forEach(b=>b.classList.toggle('active',parseFloat(b.textContent)===currentSpeed));
+  if(player&&playerReady)player.setPlaybackRate(currentSpeed);
+}
+function onSlider(v){setSpeedVal(Math.round((0.3+(v/100)*1.7)*100)/100)}
+function adjSpeed(d){setSpeedVal(Math.max(0.3,Math.min(2.0,currentSpeed+d)))}
+buildPresets();
+
+// Video load
+function loadVideo(){
+  const raw=document.getElementById('yt-url').value.trim();
+  const vid=extractVideoId(raw);
+  if(!vid){showToast('有効なYouTube URLを入力してください');return}
+  document.getElementById('yt-url').value='https://www.youtube.com/watch?v='+vid;
+  currentVideoId=vid;
+  // 動画切り替え時にAB点・ループをリセット
+  clearAB();
+  document.getElementById('placeholder').style.display='none';
+  if(player&&playerReady)player.loadVideoById(vid);
+  else if(window.YT&&YT.Player)createPlayer(vid);
+  else window._ytPendingVid=vid;
+  enableControls();renderMarks();
+  // タイトル取得してクイックリンク更新（少し待つ）
+  setTimeout(()=>{
+    try{
+      const t=player&&player.getVideoData&&player.getVideoData().title;
+      if(t)updateQuickLinks(t);
+    }catch(e){}
+  },2000);
+}
+function createPlayer(vid){
+  player=new YT.Player('yt-player',{videoId:vid,playerVars:{playsinline:1,rel:0},
+  events:{onReady:()=>{playerReady=true;player.setPlaybackRate(currentSpeed);startTimeUpdate()},onStateChange:()=>{}}});
+}
+window.onYouTubeIframeAPIReady=function(){if(window._ytPendingVid)createPlayer(window._ytPendingVid)};
+function enableControls(){
+  ['set-a-btn','set-b-btn','add-mark-btn','loop-btn','ov-a','ov-b','ov-loop','play-btn','back-a-btn','back5-btn','back10-btn','save-ab-btn','seek-bar','back05-btn'].forEach(id=>{const el=document.getElementById(id);if(el)el.disabled=false});
+}
+function startTimeUpdate(){
+  clearInterval(timeInterval);
+  timeInterval=setInterval(()=>{
+    if(player&&playerReady){
+      const t=player.getCurrentTime();
+      document.getElementById('ov-time').textContent='現在: '+fmt(t);
+      const dur=player.getDuration()||0;
+      const sb=document.getElementById('seek-bar');if(sb)sb.value=dur>0?(t/dur*100):0;
+      const sc=document.getElementById('seek-current');if(sc)sc.textContent=fmt(t);
+      const sd=document.getElementById('seek-duration');if(sd)sd.textContent=fmt(dur);
+    }
+  },500);
+}
+
+// AB toggle
+function togglePoint(p){
+  if(p==='A'){
+    if(abA!==null){
+      // 解除
+      abA=null;
+      document.getElementById('ab-pt-a').classList.remove('set');
+      document.getElementById('a-time').textContent='--:--';
+      document.getElementById('ov-a').textContent='A点セット';
+      document.getElementById('ov-a').classList.remove('set');
+      if(looping){looping=false;clearInterval(loopInterval);
+        document.getElementById('loop-btn').innerHTML='<i class="ti ti-repeat"></i> OFF';
+        document.getElementById('ov-loop').innerHTML='<i class="ti ti-repeat"></i> ループ';
+        document.getElementById('ov-loop').classList.remove('loop-on');}
+      updateABStatus();showToast('A点を解除');
+    }else{setPoint('A')}
+  }else{
+    if(abB!==null){
+      // 解除
+      abB=null;
+      document.getElementById('ab-pt-b').classList.remove('set');
+      document.getElementById('b-time').textContent='--:--';
+      document.getElementById('ov-b').textContent='B点セット';
+      document.getElementById('ov-b').classList.remove('set');
+      if(looping){looping=false;clearInterval(loopInterval);
+        document.getElementById('loop-btn').innerHTML='<i class="ti ti-repeat"></i> OFF';
+        document.getElementById('ov-loop').innerHTML='<i class="ti ti-repeat"></i> ループ';
+        document.getElementById('ov-loop').classList.remove('loop-on');}
+      updateABStatus();showToast('B点を解除');
+    }else{setPoint('B')}
+  }
+}
+
+// Search panel
+function switchTab(tab){
+  const ytPanel=document.getElementById('yt-search-panel');
+  const webPanel=document.getElementById('web-search-panel');
+  const tabYt=document.getElementById('tab-yt');
+  const tabWeb=document.getElementById('tab-web');
+  if(tab==='yt'){
+    ytPanel.style.display='flex';webPanel.style.display='none';
+    tabYt.style.borderBottomColor='#1D9E75';tabYt.style.color='#1D9E75';tabYt.style.fontWeight='600';
+    tabWeb.style.borderBottomColor='transparent';tabWeb.style.color='#888';tabWeb.style.fontWeight='400';
+  }else{
+    ytPanel.style.display='none';webPanel.style.display='flex';
+    tabWeb.style.borderBottomColor='#1D9E75';tabWeb.style.color='#1D9E75';tabWeb.style.fontWeight='600';
+    tabYt.style.borderBottomColor='transparent';tabYt.style.color='#888';tabYt.style.fontWeight='400';
+  }
+}
+function doWebSearch(){
+  const q=document.getElementById('web-search-input').value.trim();
+  if(!q)return;
+  document.getElementById('search-frame').src='https://paulgo.io/search?q='+encodeURIComponent(q);
+}
+document.addEventListener('keydown',function(e){
+  if(e.key==='Enter'&&document.activeElement.id==='web-search-input')doWebSearch();
+  if(e.key==='Enter'&&document.activeElement.id==='yt-search-input')searchYoutube();
+});
+function searchYoutube(){
+  const q=document.getElementById('yt-search-input').value.trim();
+  if(!q)return;
+  const results=document.getElementById('yt-results');
+  results.style.padding='0';
+  results.innerHTML=`<iframe src="https://m.youtube.com/results?search_query=${encodeURIComponent(q)}" style="width:100%;height:100%;border:none;flex:1" sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-top-navigation"></iframe>`;
+}
+function loadYtResult(videoId){
+  document.getElementById('yt-url').value='https://www.youtube.com/watch?v='+videoId;
+  loadVideo();
+  showToast('動画を読み込みました');
+}
+function doSearch(){const q=document.getElementById('web-search-input').value.trim();if(!q)return;document.getElementById('search-frame').src='https://duckduckgo.com/?q='+encodeURIComponent(q);}
+function openSearch(){
+  const q=document.getElementById('search-input').value.trim();
+  if(!q)return;
+  window.open('https://www.google.com/search?q='+encodeURIComponent(q),'_blank');
+}
+document.addEventListener('keydown',function(e){
+  if(e.key==='Enter'&&document.activeElement.id==='search-input')openSearch();
+});
+function updateQuickLinks(title){
+  // タイトルは検索欄に入れない
+}
+
+// AB
+function setPoint(p){
+  if(!player||!playerReady)return;
+  const t=player.getCurrentTime();
+  if(p==='A'){
+    abA=t;
+    document.getElementById('ab-pt-a').classList.add('set');
+    document.getElementById('a-time').textContent=fmt(t);
+    document.getElementById('ov-a').textContent='A: '+fmt(t);
+    document.getElementById('ov-a').classList.add('set');
+  }else{
+    abB=t;
+    document.getElementById('ab-pt-b').classList.add('set');
+    document.getElementById('b-time').textContent=fmt(t);
+    document.getElementById('ov-b').textContent='B: '+fmt(t);
+    document.getElementById('ov-b').classList.add('set');
+  }
+  updateABStatus();showToast(p+'点: '+fmt(t));
+}
+function updateABStatus(){
+  const st=document.getElementById('ab-status');
+  if(abA!==null&&abB!==null){
+    const a=Math.min(abA,abB),b=Math.max(abA,abB);
+    st.textContent=looping?'🔁 ループ中: '+fmt(a)+' → '+fmt(b):fmt(a)+' → '+fmt(b);
+    st.className='ab-status-sm'+(looping?' on':'');
+  }else{st.textContent='A・B点をセットするとループ再生できます';st.className='ab-status-sm'}
+}
+function toggleLoop(){
+  if(abA===null||abB===null){showToast('先にA点とB点をセットしてください');return}
+  const a=Math.min(abA,abB),b=Math.max(abA,abB);
+  looping=!looping;
+  const loopBtn=document.getElementById('loop-btn');
+  const ovLoop=document.getElementById('ov-loop');
+  if(looping){
+    loopBtn.innerHTML='<i class="ti ti-repeat"></i> ON';loopBtn.classList.add('active');
+    ovLoop.classList.add('loop-on');ovLoop.innerHTML='<i class="ti ti-repeat"></i> ON';
+    if(player&&playerReady)player.seekTo(a,true);
+    loopInterval=setInterval(()=>{if(!player||!playerReady)return;const c=player.getCurrentTime();if(c>=b||c<a-1)player.seekTo(a,true)},300);
+  }else{
+    loopBtn.innerHTML='<i class="ti ti-repeat"></i> OFF';loopBtn.classList.remove('active');
+    ovLoop.classList.remove('loop-on');ovLoop.innerHTML='<i class="ti ti-repeat"></i> ループ';
+    clearInterval(loopInterval);
+  }
+  updateABStatus();
+}
+function clearAB(){
+  abA=null;abB=null;looping=false;clearInterval(loopInterval);
+  ['ab-pt-a','ab-pt-b'].forEach(id=>document.getElementById(id).classList.remove('set'));
+  document.getElementById('a-time').textContent='--:--';
+  document.getElementById('b-time').textContent='--:--';
+  document.getElementById('ov-a').textContent='A点セット';document.getElementById('ov-a').classList.remove('set');
+  document.getElementById('ov-b').textContent='B点セット';document.getElementById('ov-b').classList.remove('set');
+  document.getElementById('loop-btn').innerHTML='<i class="ti ti-repeat"></i> OFF';
+  document.getElementById('ov-loop').innerHTML='<i class="ti ti-repeat"></i> ループ';
+  document.getElementById('ov-loop').classList.remove('loop-on');
+  updateABStatus();
+}
+
+// Marks
+function addMark(){
+  if(!player||!playerReady)return;
+  const t=player.getCurrentTime();
+  const label=document.getElementById('mark-label').value.trim()||'練習ポイント';
+  if(!marks[currentVideoId])marks[currentVideoId]=[];
+  marks[currentVideoId].push({t,label});
+  marks[currentVideoId].sort((a,b)=>a.t-b.t);
+  localStorage.setItem('lm_marks',JSON.stringify(marks));
+  document.getElementById('mark-label').value='';
+  renderMarks();showToast('マーク: '+fmt(t));
+}
+function jumpToMark(t){if(!player||!playerReady)return;player.seekTo(t,true);player.playVideo()}
+function deleteMark(i){marks[currentVideoId].splice(i,1);localStorage.setItem('lm_marks',JSON.stringify(marks));renderMarks()}
+function renderMarks(){
+  const list=document.getElementById('mark-list');
+  const allVids=Object.keys(marks).filter(vid=>marks[vid]&&marks[vid].length>0);
+  if(!allVids.length){list.innerHTML='<div class="empty-marks">まだマークがありません</div>';return}
+  let html='';
+  allVids.forEach(vid=>{
+    const data=marks[vid];
+    const isCurrent=vid===currentVideoId;
+    const vidLabel=videoTitles[vid]||('ID:'+vid.substring(0,8));
+    html+=`<div style="margin-bottom:8px">
+      <div style="display:flex;align-items:center;gap:6px;padding:5px 6px;background:${isCurrent?'#1a1a18':'#f0f0ee'};border-radius:7px;cursor:pointer;margin-bottom:4px" onclick="switchVideo('${vid}')">
+        <i class="ti ti-brand-youtube" style="color:${isCurrent?'#1D9E75':'#888'};font-size:13px"></i>
+        <span style="font-size:11px;font-weight:600;color:${isCurrent?'#fff':'#555'};flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${vidLabel}</span>
+      </div>
+      <div style="padding-left:12px;border-left:2px solid #e0e0de;margin-left:6px;display:flex;flex-direction:column;gap:4px">
+        ${data.map((m,i)=>m.isAB?
+          `<div class="mark-item" onclick="loadABForVid('${vid}',${m.t},${m.tB})" style="border-left:3px solid #1D9E75">
+            <span class="m-time" style="color:#1D9E75;font-size:10px">${fmt(m.t)}<br>→${fmt(m.tB)}</span>
+            <span class="m-label" ondblclick="event.stopPropagation();editMarkLabelForVid('${vid}',${i},this)">${m.label}</span>
+            <button class="m-del" onclick="event.stopPropagation();deleteMarkForVid('${vid}',${i})">✕</button>
+          </div>`:
+          `<div class="mark-item" onclick="jumpToMarkForVid('${vid}',${m.t})">
+            <span class="m-time">${fmt(m.t)}</span>
+            <span class="m-label" ondblclick="event.stopPropagation();editMarkLabelForVid('${vid}',${i},this)">${m.label}</span>
+            <button class="m-del" onclick="event.stopPropagation();deleteMarkForVid('${vid}',${i})">✕</button>
+          </div>`
+        ).join('')}
+      </div>
+    </div>`;
+  });
+  list.innerHTML=html;
+}
+function switchVideo(vid){
+  if(vid===currentVideoId)return;
+  document.getElementById('yt-url').value='https://www.youtube.com/watch?v='+vid;
+  loadVideo();
+}
+function jumpToMarkForVid(vid,t){
+  if(vid!==currentVideoId){switchVideo(vid);setTimeout(()=>{if(player&&playerReady)player.seekTo(t,true)},2500);}
+  else{if(player&&playerReady)player.seekTo(t,true);}
+}
+function loadABForVid(vid,a,b){
+  if(vid!==currentVideoId){switchVideo(vid);setTimeout(()=>loadAB(a,b),2500);}
+  else{loadAB(a,b);}
+}
+function deleteMarkForVid(vid,i){
+  marks[vid].splice(i,1);
+  if(!marks[vid].length)delete marks[vid];
+  localStorage.setItem('lm_marks',JSON.stringify(marks));
+  renderMarks();
+}
+function editMarkLabelForVid(vid,i,el){
+  const cur=el.textContent;
+  const inp=document.createElement('input');
+  inp.value=cur;
+  inp.style.cssText='width:100%;font-size:12px;padding:1px 4px;border:1px solid #1D9E75;border-radius:4px;outline:none;font-family:inherit';
+  el.replaceWith(inp);inp.focus();inp.select();
+  function save(){const nl=inp.value.trim()||cur;marks[vid][i].label=nl;localStorage.setItem('lm_marks',JSON.stringify(marks));renderMarks();}
+  inp.addEventListener('blur',save);
+  inp.addEventListener('keydown',e=>{if(e.key==='Enter')inp.blur();if(e.key==='Escape'){inp.value=cur;inp.blur();}});
+}
+
+function editMarkLabel(i,el){
+  const current=el.textContent;
+  const input=document.createElement('input');
+  input.value=current;
+  input.style.cssText='width:100%;font-size:12px;padding:1px 4px;border:1px solid #1D9E75;border-radius:4px;outline:none;font-family:inherit';
+  el.replaceWith(input);
+  input.focus();
+  input.select();
+  function save(){
+    const newLabel=input.value.trim()||current;
+    marks[currentVideoId][i].label=newLabel;
+    localStorage.setItem('lm_marks',JSON.stringify(marks));
+    renderMarks();
+  }
+  input.addEventListener('blur',save);
+  input.addEventListener('keydown',function(e){
+    if(e.key==='Enter')input.blur();
+    if(e.key==='Escape'){input.value=current;input.blur();}
+  });
+}
+function loadAB(a,b){
+  abA=a;abB=b;
+  document.getElementById('ab-pt-a').classList.add('set');
+  document.getElementById('ab-pt-b').classList.add('set');
+  document.getElementById('a-time').textContent=fmt(a);
+  document.getElementById('b-time').textContent=fmt(b);
+  document.getElementById('ov-a').textContent='A: '+fmt(a);
+  document.getElementById('ov-a').classList.add('set');
+  document.getElementById('ov-b').textContent='B: '+fmt(b);
+  document.getElementById('ov-b').classList.add('set');
+  updateABStatus();
+  if(player&&playerReady)player.seekTo(a,true);
+  showToast('AB読み込み: '+fmt(a)+' → '+fmt(b));
+}
+// Resizer
+(function(){
+  const resizer=document.getElementById('resizer');
+  const videoArea=document.getElementById('video-area');
+  const rightPanel=document.getElementById('right-panel');
+  const searchFrame=document.getElementById('search-frame');
+  let dragging=false,startX=0,startVW=0,startRW=0;
+  resizer.addEventListener('mousedown',function(e){
+    e.preventDefault();
+    dragging=true;
+    startX=e.clientX;
+    startVW=videoArea.offsetWidth;
+    startRW=rightPanel.offsetWidth;
+    document.body.style.cursor='col-resize';
+    document.body.style.userSelect='none';
+    // iframeのpointer-eventsを無効化（マウスイベントを拾えるように）
+    if(searchFrame)searchFrame.style.pointerEvents='none';
+  });
+  document.addEventListener('mousemove',function(e){
+    if(!dragging)return;
+    const dx=e.clientX-startX;
+    const newVW=Math.max(250,startVW+dx);
+    const newRW=Math.max(250,startRW-dx);
+    videoArea.style.flex='none';
+    videoArea.style.width=newVW+'px';
+    rightPanel.style.width=newRW+'px';
+  });
+  document.addEventListener('mouseup',function(){
+    if(!dragging)return;
+    dragging=false;
+    document.body.style.cursor='';
+    document.body.style.userSelect='';
+    if(searchFrame)searchFrame.style.pointerEvents='';
+  });
+})();
+
+// Save AB as mark
+function saveAB(){
+  if(abA===null||abB===null){showToast('先にA点とB点をセットしてください');return}
+  const a=Math.min(abA,abB),b=Math.max(abA,abB);
+  const label=document.getElementById('mark-label').value.trim()||'AB区間';
+  if(!marks[currentVideoId])marks[currentVideoId]=[];
+  marks[currentVideoId].push({t:a,tB:b,label,isAB:true});
+  marks[currentVideoId].sort((x,y)=>x.t-y.t);
+  localStorage.setItem('lm_marks',JSON.stringify(marks));
+  document.getElementById('mark-label').value='';
+  renderMarks();showToast('AB保存: '+fmt(a)+' → '+fmt(b));
+}
+
+function onSeekBar(v){
+  if(!player||!playerReady)return;
+  const dur=player.getDuration()||0;
+  document.getElementById('seek-current').textContent=fmt((v/100)*dur);
+}
+function onSeekBarEnd(v){
+  if(!player||!playerReady)return;
+  player.seekTo((v/100)*(player.getDuration()||0),true);
+}
+function togglePlay(){
+  if(!player||!playerReady)return;
+  const state=player.getPlayerState();
+  if(state===1){player.pauseVideo();document.getElementById('play-btn').innerHTML='<i class="ti ti-player-play"></i> 再生'}
+  else{player.playVideo();document.getElementById('play-btn').innerHTML='<i class="ti ti-player-pause"></i> 一時停止'}
+}
+function seekRel(sec){
+  if(!player||!playerReady)return;
+  player.seekTo(Math.max(0,player.getCurrentTime()+sec),true);
+}
+function backToA(){
+  if(!player||!playerReady||abA===null)return;
+  player.seekTo(abA,true);
+  showToast('A点へ移動: '+fmt(abA));
+}
+function toggleLeft(){
+  const lp=document.getElementById('left-panel');
+  const icon=document.getElementById('left-icon');
+  if(!lp)return;
+  const hidden=lp.style.display==='none';
+  if(hidden){
+    lp.style.display='';
+    if(icon)icon.className='ti ti-chevron-left';
+    const sb=document.getElementById('btn-show-left');
+    if(sb)sb.remove();
+  }else{
+    lp.style.display='none';
+    if(icon)icon.className='ti ti-chevron-right';
+    const va=document.getElementById('video-area');
+    let sb=document.getElementById('btn-show-left');
+    if(!sb){
+      sb=document.createElement('button');
+      sb.id='btn-show-left';
+      sb.onclick=toggleLeft;
+      sb.style.cssText='position:absolute;top:8px;left:8px;z-index:999;width:32px;height:32px;background:#1D9E75;border:none;border-radius:6px;cursor:pointer;color:#fff;font-size:16px';
+      sb.innerHTML='<i class="ti ti-chevron-right"></i>';
+      va.appendChild(sb);
+    }
+  }
+}
+function openSearchWindow(){
+  const sw = window.screen.width;
+  const sh = window.screen.height;
+  const w = 460;
+  const left = sw - w;
+  const win = window.open('https://www.google.com', 'loopmark_search',
+    `width=${w},height=${sh},left=${left},top=0,toolbar=yes,location=yes,menubar=no,scrollbars=yes`);
+  if(!win) showToast('ポップアップを許可してください');
+  else showToast('検索ウィンドウを開きました');
+}
+function showToast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');clearTimeout(t._tid);t._tid=setTimeout(()=>t.classList.remove('show'),2000)}
+const s=document.createElement('script');s.src='https://www.youtube.com/iframe_api';document.head.appendChild(s);
+document.getElementById('yt-url').addEventListener('keydown',function(e){if(e.key==='Enter')loadVideo();});
+renderMarks();
+</script>
+</body>
+</html>
