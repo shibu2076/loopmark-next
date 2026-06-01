@@ -71,7 +71,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',sans-serif;ba
 .ab-status-sm.on{color:#1D9E75;font-weight:500}
 
 /* Marks */
-.mark-list{display:flex;flex-direction:column;gap:4px;max-height:160px;overflow-y:auto;margin-bottom:6px}
+.mark-list{display:flex;flex-direction:column;gap:4px;max-height:260px;overflow-y:auto;margin-bottom:6px}
 .mark-item{display:flex;align-items:center;gap:6px;padding:5px 8px;border-radius:7px;border:1px solid #e8e8e6;background:#fafaf8;cursor:pointer}
 .mark-item:hover{border-color:#1D9E75;background:#f0faf6}
 .m-time{font-family:monospace;font-size:11px;color:#1D9E75;min-width:44px}
@@ -472,6 +472,7 @@ function renderMarks(){
           `<div class="mark-item" onclick="loadABForVid('${vid}',${m.t},${m.tB})" style="border-left:3px solid #1D9E75">
             <span class="m-time" style="color:#1D9E75;font-size:10px">${fmt(m.t)}<br>→${fmt(m.tB)}</span>
             <span class="m-label" ondblclick="event.stopPropagation();editMarkLabelForVid('${vid}',${i},this)">${m.label}</span>
+            <button class="m-del" onclick="event.stopPropagation();shareMarkForVid('${vid}',${m.t},${m.tB},'${m.label}')" style="font-size:12px;color:#1D9E75;border:none;background:none;cursor:pointer;padding:0 2px" title="共有">⬆</button>
             <button class="m-del" onclick="event.stopPropagation();deleteMarkForVid('${vid}',${i})">✕</button>
           </div>`:
           `<div class="mark-item" onclick="jumpToMarkForVid('${vid}',${m.t})">
@@ -598,6 +599,7 @@ function saveAB(){
   if(uAB&&window._saveMarksToCloud)window._saveMarksToCloud(uAB.uid,marks);
   document.getElementById('mark-label').value='';
   renderMarks();showToast('AB保存: '+fmt(a)+' → '+fmt(b));
+
 }
 
 function onSeekBar(v){
@@ -671,6 +673,21 @@ window.addEventListener('lm-marks-loaded', function(){
     if(tries > 20) clearInterval(interval);
   }, 100);
 });
+function shareMarkForVid(vid,abA,abB,label){
+  const user=window._firebaseAuth&&window._firebaseAuth.currentUser;
+  if(!user){showToast('ログインして共有できます');return;}
+  if(!window._createShareUrl){showToast('共有機能を準備中...');return;}
+  showToast('共有URL生成中...');
+  window._createShareUrl(user.uid,vid,abA,abB,label).then(url=>{
+    if(url){
+      navigator.clipboard.writeText(url).then(()=>{
+        showToast('共有URLをコピーしました！');
+      }).catch(()=>{
+        prompt('共有URL（コピーしてください）',url);
+      });
+    }
+  });
+}
 function toggleAuthMenu(){
   const menu=document.getElementById('auth-menu');
   if(!menu)return;
@@ -688,7 +705,7 @@ const s=document.createElement('script');s.src='https://www.youtube.com/iframe_a
 (async function(){
   const {initializeApp,getApps} = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js');
   const {getAuth,GoogleAuthProvider,signInWithPopup,signInWithRedirect,getRedirectResult,signOut,onAuthStateChanged} = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js');
-  const {getFirestore,doc,setDoc,getDoc} = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js');
+  const {getFirestore,doc,setDoc,getDoc,addDoc,collection} = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js');
   const firebaseConfig={apiKey:"AIzaSyDukP8QwIhPuM5BNoT2dBRot0dNWgPOGfU",authDomain:"loopmark-de961.firebaseapp.com",projectId:"loopmark-de961",storageBucket:"loopmark-de961.firebasestorage.app",messagingSenderId:"320939493127",appId:"1:320939493127:web:4ec0fc8f0268efaed1a7a2"};
   const app=getApps().length===0?initializeApp(firebaseConfig):getApps()[0];
   const auth=getAuth(app);
@@ -697,6 +714,15 @@ const s=document.createElement('script');s.src='https://www.youtube.com/iframe_a
   window._firebaseAuth=auth;
   window._firebaseSignIn=()=>signInWithPopup(auth,provider).catch(()=>signInWithRedirect(auth,provider));
   window._firebaseSignOut=()=>{signOut(auth);localStorage.removeItem('lm_marks');window.marks={};renderMarks();};
+  window._createShareUrl=async(uid,videoId,abA,abB,label)=>{
+    try{
+      const ref=await addDoc(collection(db,'shares'),{
+        uid,videoId,abA,abB,label,
+        createdAt:new Date().toISOString()
+      });
+      return 'https://loopmark-next.vercel.app/share/'+ref.id;
+    }catch(e){console.error(e);return null;}
+  };
   window._saveMarksToCloud=async(uid,m)=>{try{await setDoc(doc(db,'users',uid),{marks:JSON.stringify(m)},{merge:true});}catch(e){console.error(e);}};
   onAuthStateChanged(auth,async(user)=>{
     const btn=document.getElementById('auth-btn');
