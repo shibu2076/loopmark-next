@@ -776,6 +776,7 @@ document.getElementById('yt-url').addEventListener('keydown',function(e){if(e.ke
       document.getElementById('ov-a').classList.add('set');
       document.getElementById('ov-b').classList.add('set');
       updateABStatus();
+      if(player&&playerReady)player.seekTo(abA,true);
       showToast('AB区間を読み込みました: '+fmt(abA)+' → '+fmt(abB));
     },2000);
   }
