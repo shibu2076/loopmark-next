@@ -754,6 +754,32 @@ const s=document.createElement('script');s.src='https://www.youtube.com/iframe_a
   });
 })();
 document.getElementById('yt-url').addEventListener('keydown',function(e){if(e.key==='Enter')loadVideo();});
+
+// 共有URLパラメータを読み取って自動セット
+(function(){
+  const params=new URLSearchParams(window.location.search);
+  const v=params.get('v');
+  const a=params.get('a');
+  const b=params.get('b');
+  if(v&&a&&b){
+    document.getElementById('yt-url').value='https://www.youtube.com/watch?v='+v;
+    loadVideo();
+    setTimeout(()=>{
+      abA=parseFloat(a);
+      abB=parseFloat(b);
+      document.getElementById('ab-pt-a').classList.add('set');
+      document.getElementById('ab-pt-b').classList.add('set');
+      document.getElementById('a-time').textContent=fmt(abA);
+      document.getElementById('b-time').textContent=fmt(abB);
+      document.getElementById('ov-a').textContent='A: '+fmt(abA);
+      document.getElementById('ov-b').textContent='B: '+fmt(abB);
+      document.getElementById('ov-a').classList.add('set');
+      document.getElementById('ov-b').classList.add('set');
+      updateABStatus();
+      showToast('AB区間を読み込みました: '+fmt(abA)+' → '+fmt(abB));
+    },2000);
+  }
+})();
 renderMarks();
 </script>
 </body>
