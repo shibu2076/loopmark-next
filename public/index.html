@@ -86,210 +86,6 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',sans-serif;ba
 .toast{position:fixed;bottom:16px;left:50%;transform:translateX(-50%);background:#1a1a18;color:#fff;padding:6px 16px;border-radius:16px;font-size:12px;opacity:0;transition:opacity 0.3s;pointer-events:none;z-index:999;white-space:nowrap}
 .toast.show{opacity:1}
 </style>
-<script type="module">
-import { initializeApp, getApps } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
-import { getFirestore, doc, setDoc, getDoc, collection } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
-
-const firebaseConfig = {
-  apiKey: "AIzaSyDukP8QwIhPuM5BNoT2dBRot0dNWgPOGfU",
-  authDomain: "loopmark-de961.firebaseapp.com",
-  projectId: "loopmark-de961",
-  storageBucket: "loopmark-de961.firebasestorage.app",
-  messagingSenderId: "320939493127",
-  appId: "1:320939493127:web:4ec0fc8f0268efaed1a7a2"
-};
-
-const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApps()[0];
-const auth = getAuth(app);
-const db = getFirestore(app);
-const provider = new GoogleAuthProvider();
-
-// Firestoreにマークを保存
-window._saveMarksToCloud = async (uid, marks) => {
-  try {
-    await setDoc(doc(db, 'users', uid), { marks: JSON.stringify(marks) }, { merge: true });
-  } catch(e) { console.error('保存失敗', e); }
-};
-
-// Firestoreからマークを読み込み
-window._loadMarksFromCloud = async (uid) => {
-  try {
-    const snap = await getDoc(doc(db, 'users', uid));
-    if (snap.exists() && snap.data().marks) {
-      return JSON.parse(snap.data().marks);
-    }
-  } catch(e) { console.error('読み込み失敗', e); }
-  return null;
-};
-
-window._firebaseAuth = auth;
-window._firebaseProvider = provider;
-window._firebaseSignIn = () => signInWithPopup(auth, provider);
-window._firebaseSignOut = () => signOut(auth);
-
-onAuthStateChanged(auth, async (user) => {
-  const btn = document.getElementById('auth-btn');
-  const avatar = document.getElementById('auth-avatar');
-  if (!btn) return;
-  if (user) {
-    btn.style.display = 'none';
-    avatar.style.display = 'flex';
-    const img = avatar.querySelector('img');
-    img.src = user.photoURL || '';
-    img.referrerPolicy = 'no-referrer';
-    const menuName = document.getElementById('auth-menu-name');
-    if(menuName) menuName.textContent = user.displayName || user.email;
-    avatar.querySelector('span').textContent = user.displayName || user.email;
-    // クラウドからマークを読み込み
-    const cloudMarks = await window._loadMarksFromCloud(user.uid);
-    if (cloudMarks) {
-      window.marks = cloudMarks;
-      localStorage.setItem('lm_marks', JSON.stringify(cloudMarks));
-      if (typeof renderMarks === 'function') renderMarks();
-    }
-  } else {
-    btn.style.display = 'flex';
-    avatar.style.display = 'none';
-  }
-});
-</script>
-<script type="module">
-import { initializeApp, getApps } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
-import { getFirestore, doc, setDoc, getDoc, collection } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
-
-const firebaseConfig = {
-  apiKey: "AIzaSyDukP8QwIhPuM5BNoT2dBRot0dNWgPOGfU",
-  authDomain: "loopmark-de961.firebaseapp.com",
-  projectId: "loopmark-de961",
-  storageBucket: "loopmark-de961.firebasestorage.app",
-  messagingSenderId: "320939493127",
-  appId: "1:320939493127:web:4ec0fc8f0268efaed1a7a2"
-};
-
-const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApps()[0];
-const auth = getAuth(app);
-const db = getFirestore(app);
-const provider = new GoogleAuthProvider();
-
-// Firestoreにマークを保存
-window._saveMarksToCloud = async (uid, marks) => {
-  try {
-    await setDoc(doc(db, 'users', uid), { marks: JSON.stringify(marks) }, { merge: true });
-  } catch(e) { console.error('保存失敗', e); }
-};
-
-// Firestoreからマークを読み込み
-window._loadMarksFromCloud = async (uid) => {
-  try {
-    const snap = await getDoc(doc(db, 'users', uid));
-    if (snap.exists() && snap.data().marks) {
-      return JSON.parse(snap.data().marks);
-    }
-  } catch(e) { console.error('読み込み失敗', e); }
-  return null;
-};
-
-window._firebaseAuth = auth;
-window._firebaseProvider = provider;
-window._firebaseSignIn = () => signInWithPopup(auth, provider);
-window._firebaseSignOut = () => signOut(auth);
-
-onAuthStateChanged(auth, async (user) => {
-  const btn = document.getElementById('auth-btn');
-  const avatar = document.getElementById('auth-avatar');
-  if (!btn) return;
-  if (user) {
-    btn.style.display = 'none';
-    avatar.style.display = 'flex';
-    const img = avatar.querySelector('img');
-    img.src = user.photoURL || '';
-    img.referrerPolicy = 'no-referrer';
-    const menuName = document.getElementById('auth-menu-name');
-    if(menuName) menuName.textContent = user.displayName || user.email;
-    avatar.querySelector('span').textContent = user.displayName || user.email;
-    // クラウドからマークを読み込み
-    const cloudMarks = await window._loadMarksFromCloud(user.uid);
-    if (cloudMarks) {
-      window.marks = cloudMarks;
-      localStorage.setItem('lm_marks', JSON.stringify(cloudMarks));
-      if (typeof renderMarks === 'function') renderMarks();
-    }
-  } else {
-    btn.style.display = 'flex';
-    avatar.style.display = 'none';
-  }
-});
-</script>
-<script type="module">
-import { initializeApp, getApps } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
-import { getFirestore, doc, setDoc, getDoc, collection } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
-
-const firebaseConfig = {
-  apiKey: "AIzaSyDukP8QwIhPuM5BNoT2dBRot0dNWgPOGfU",
-  authDomain: "loopmark-de961.firebaseapp.com",
-  projectId: "loopmark-de961",
-  storageBucket: "loopmark-de961.firebasestorage.app",
-  messagingSenderId: "320939493127",
-  appId: "1:320939493127:web:4ec0fc8f0268efaed1a7a2"
-};
-
-const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApps()[0];
-const auth = getAuth(app);
-const db = getFirestore(app);
-const provider = new GoogleAuthProvider();
-
-// Firestoreにマークを保存
-window._saveMarksToCloud = async (uid, marks) => {
-  try {
-    await setDoc(doc(db, 'users', uid), { marks: JSON.stringify(marks) }, { merge: true });
-  } catch(e) { console.error('保存失敗', e); }
-};
-
-// Firestoreからマークを読み込み
-window._loadMarksFromCloud = async (uid) => {
-  try {
-    const snap = await getDoc(doc(db, 'users', uid));
-    if (snap.exists() && snap.data().marks) {
-      return JSON.parse(snap.data().marks);
-    }
-  } catch(e) { console.error('読み込み失敗', e); }
-  return null;
-};
-
-window._firebaseAuth = auth;
-window._firebaseProvider = provider;
-window._firebaseSignIn = () => signInWithPopup(auth, provider);
-window._firebaseSignOut = () => signOut(auth);
-
-onAuthStateChanged(auth, async (user) => {
-  const btn = document.getElementById('auth-btn');
-  const avatar = document.getElementById('auth-avatar');
-  if (!btn) return;
-  if (user) {
-    btn.style.display = 'none';
-    avatar.style.display = 'flex';
-    const img = avatar.querySelector('img');
-    img.src = user.photoURL || '';
-    img.referrerPolicy = 'no-referrer';
-    const menuName = document.getElementById('auth-menu-name');
-    if(menuName) menuName.textContent = user.displayName || user.email;
-    avatar.querySelector('span').textContent = user.displayName || user.email;
-    // クラウドからマークを読み込み
-    const cloudMarks = await window._loadMarksFromCloud(user.uid);
-    if (cloudMarks) {
-      window.marks = cloudMarks;
-      localStorage.setItem('lm_marks', JSON.stringify(cloudMarks));
-      if (typeof renderMarks === 'function') renderMarks();
-    }
-  } else {
-    btn.style.display = 'flex';
-    avatar.style.display = 'none';
-  }
-});
-</script>
 </head>
 <body>
 <!-- Top bar -->
@@ -645,9 +441,8 @@ function addMark(){
   marks[currentVideoId].push({t,label});
   marks[currentVideoId].sort((a,b)=>a.t-b.t);
   localStorage.setItem('lm_marks',JSON.stringify(marks));
-  // クラウドに保存
-  const user = window._firebaseAuth && window._firebaseAuth.currentUser;
-  if (user && window._saveMarksToCloud) window._saveMarksToCloud(user.uid, marks);
+  const u=window._firebaseAuth&&window._firebaseAuth.currentUser;
+  if(u&&window._saveMarksToCloud)window._saveMarksToCloud(u.uid,marks);
   document.getElementById('mark-label').value='';
   renderMarks();showToast('マーク: '+fmt(t));
 }
@@ -794,9 +589,8 @@ function saveAB(){
   marks[currentVideoId].push({t:a,tB:b,label,isAB:true});
   marks[currentVideoId].sort((x,y)=>x.t-y.t);
   localStorage.setItem('lm_marks',JSON.stringify(marks));
-  // クラウドに保存
-  const userAB = window._firebaseAuth && window._firebaseAuth.currentUser;
-  if (userAB && window._saveMarksToCloud) window._saveMarksToCloud(userAB.uid, marks);
+  const uAB=window._firebaseAuth&&window._firebaseAuth.currentUser;
+  if(uAB&&window._saveMarksToCloud)window._saveMarksToCloud(uAB.uid,marks);
   document.getElementById('mark-label').value='';
   renderMarks();showToast('AB保存: '+fmt(a)+' → '+fmt(b));
 }
@@ -860,6 +654,18 @@ function openSearchWindow(){
   if(!win) showToast('ポップアップを許可してください');
   else showToast('検索ウィンドウを開きました');
 }
+window.addEventListener('lm-marks-loaded', function(){
+  // renderMarksが定義されるまで繰り返し試みる
+  let tries = 0;
+  const interval = setInterval(()=>{
+    tries++;
+    if(typeof renderMarks==='function'){
+      clearInterval(interval);
+      renderMarks();
+    }
+    if(tries > 20) clearInterval(interval);
+  }, 100);
+});
 function toggleAuthMenu(){
   const menu=document.getElementById('auth-menu');
   if(!menu)return;
@@ -868,10 +674,54 @@ function toggleAuthMenu(){
 document.addEventListener('click',function(e){
   const avatar=document.getElementById('auth-avatar');
   const menu=document.getElementById('auth-menu');
-  if(menu&&!avatar.contains(e.target))menu.style.display='none';
+  if(menu&&avatar&&!avatar.contains(e.target))menu.style.display='none';
 });
 function showToast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');clearTimeout(t._tid);t._tid=setTimeout(()=>t.classList.remove('show'),2000)}
 const s=document.createElement('script');s.src='https://www.youtube.com/iframe_api';document.head.appendChild(s);
+
+// Firebase初期化（DOM完成後）
+(async function(){
+  const {initializeApp,getApps} = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js');
+  const {getAuth,GoogleAuthProvider,signInWithPopup,signInWithRedirect,getRedirectResult,signOut,onAuthStateChanged} = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js');
+  const {getFirestore,doc,setDoc,getDoc} = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js');
+  const firebaseConfig={apiKey:"AIzaSyDukP8QwIhPuM5BNoT2dBRot0dNWgPOGfU",authDomain:"loopmark-de961.firebaseapp.com",projectId:"loopmark-de961",storageBucket:"loopmark-de961.firebasestorage.app",messagingSenderId:"320939493127",appId:"1:320939493127:web:4ec0fc8f0268efaed1a7a2"};
+  const app=getApps().length===0?initializeApp(firebaseConfig):getApps()[0];
+  const auth=getAuth(app);
+  const db=getFirestore(app);
+  const provider=new GoogleAuthProvider();
+  window._firebaseAuth=auth;
+  window._firebaseSignIn=()=>signInWithPopup(auth,provider).catch(()=>signInWithRedirect(auth,provider));
+  window._firebaseSignOut=()=>{signOut(auth);localStorage.removeItem('lm_marks');window.marks={};renderMarks();};
+  window._saveMarksToCloud=async(uid,m)=>{try{await setDoc(doc(db,'users',uid),{marks:JSON.stringify(m)},{merge:true});}catch(e){console.error(e);}};
+  onAuthStateChanged(auth,async(user)=>{
+    const btn=document.getElementById('auth-btn');
+    const avatar=document.getElementById('auth-avatar');
+    if(!btn)return;
+    if(user){
+      btn.style.display='none';
+      avatar.style.display='flex';
+      const img=avatar.querySelector('img');
+      img.src=user.photoURL||'';
+      img.referrerPolicy='no-referrer';
+      avatar.querySelector('span').textContent=user.displayName||user.email;
+      const menuName=document.getElementById('auth-menu-name');
+      if(menuName)menuName.textContent=user.displayName||user.email;
+      try{
+        const snap=await getDoc(doc(db,'users',user.uid));
+        if(snap.exists()&&snap.data().marks){
+          const cloudMarks=JSON.parse(snap.data().marks);
+          window.marks=cloudMarks;
+          marks=cloudMarks;
+          localStorage.setItem('lm_marks',JSON.stringify(cloudMarks));
+          renderMarks();
+        }
+      }catch(e){console.error('読み込み失敗',e);}
+    }else{
+      btn.style.display='flex';
+      avatar.style.display='none';
+    }
+  });
+})();
 document.getElementById('yt-url').addEventListener('keydown',function(e){if(e.key==='Enter')loadVideo();});
 renderMarks();
 </script>
