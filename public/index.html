@@ -265,7 +265,12 @@ function loadVideo(){
   setTimeout(()=>{
     try{
       const t=player&&player.getVideoData&&player.getVideoData().title;
-      if(t)updateQuickLinks(t);
+      if(t){
+        updateQuickLinks(t);
+        videoTitles[currentVideoId]=t;
+        localStorage.setItem('lm_titles',JSON.stringify(videoTitles));
+        renderMarks();
+      }
     }catch(e){}
   },2000);
 }
