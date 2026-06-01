@@ -119,6 +119,19 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',sans-serif;ba
         <i class="ti ti-chevron-left" id="left-icon" style="font-size:13px"></i>
       </button>
     </div>
+    <div class="ctrl-section" style="padding-bottom:8px">
+      <div style="display:flex;gap:6px;margin-bottom:10px">
+        <button id="play-btn-main" onclick="togglePlay()" disabled style="flex:2;padding:10px;border-radius:8px;border:1px solid #1D9E75;background:#1D9E75;color:#fff;font-size:15px;font-weight:700;cursor:pointer;font-family:inherit;display:flex;align-items:center;justify-content:center;gap:6px"><i class="ti ti-player-play"></i> 再生</button>
+        <button id="loop-btn-main" onclick="toggleLoop()" disabled style="flex:1;padding:10px;border-radius:8px;border:1px solid #ddd;background:#fff;font-size:11px;cursor:pointer;font-family:inherit;display:flex;align-items:center;justify-content:center;gap:4px"><i class="ti ti-repeat"></i> OFF</button>
+        <button onclick="backToA()" id="back-a-btn2" disabled style="flex:1;padding:10px;border-radius:8px;border:1px solid #ddd;background:#fff;font-size:11px;cursor:pointer;font-family:inherit">A点へ</button>
+      </div>
+      <div style="display:flex;gap:4px;margin-bottom:2px">
+        <button onclick="seekRel(-0.5)" id="back05-btn2" disabled style="flex:1;padding:6px 2px;border-radius:7px;border:1px solid #ddd;background:#f5f5f3;font-size:11px;cursor:pointer;font-family:inherit">−0.5秒</button>
+        <button onclick="seekRel(-5)" id="back5-btn2" disabled style="flex:1;padding:6px 2px;border-radius:7px;border:1px solid #ddd;background:#f5f5f3;font-size:11px;cursor:pointer;font-family:inherit">−5秒</button>
+        <button onclick="seekRel(-10)" id="back10-btn2" disabled style="flex:1;padding:6px 2px;border-radius:7px;border:1px solid #ddd;background:#f5f5f3;font-size:11px;cursor:pointer;font-family:inherit">−10秒</button>
+        <button onclick="seekRel(5)" id="fwd5-btn2" disabled style="flex:1;padding:6px 2px;border-radius:7px;border:1px solid #ddd;background:#f5f5f3;font-size:11px;cursor:pointer;font-family:inherit">+5秒</button>
+      </div>
+    </div>
     <div class="ctrl-section">
       <div class="ctrl-label">再生速度</div>
       <div class="speed-num" id="speed-num">1.00x</div>
@@ -153,16 +166,10 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',sans-serif;ba
       <div class="ab-btns" style="margin-bottom:5px">
         <button class="btn" style="font-size:11px;padding:5px 8px" onclick="setPoint('A')" id="set-a-btn" disabled>A点セット</button>
         <button class="btn" style="font-size:11px;padding:5px 8px" onclick="setPoint('B')" id="set-b-btn" disabled>B点セット</button>
-        <button class="btn active" style="font-size:11px;padding:5px 8px" id="loop-btn" onclick="toggleLoop()" disabled><i class="ti ti-repeat"></i> OFF</button>
         <button class="btn danger" style="font-size:11px;padding:5px 8px" onclick="clearAB()">クリア</button>
+        <button id="loop-btn" style="display:none" onclick="toggleLoop()"></button>
       </div>
-      <div style="display:flex;gap:4px;flex-wrap:wrap">
-        <button class="btn" style="font-size:11px;padding:5px 8px" id="play-btn" onclick="togglePlay()" disabled><i class="ti ti-player-play"></i> 再生</button>
-        <button class="btn" style="font-size:11px;padding:5px 8px" id="back-a-btn" onclick="backToA()" disabled><i class="ti ti-arrow-back-up"></i> A点へ</button>
-        <button class="btn" style="font-size:11px;padding:5px 8px" id="back05-btn" onclick="seekRel(-0.5)" disabled>−0.5秒</button>
-        <button class="btn" style="font-size:11px;padding:5px 8px" id="back5-btn" onclick="seekRel(-5)" disabled>−5秒</button>
-        <button class="btn" style="font-size:11px;padding:5px 8px" id="back10-btn" onclick="seekRel(-10)" disabled>−10秒</button>
-      </div>
+
       <div class="ab-status-sm" id="ab-status">A・B点をセットするとループ再生できます</div>
     </div>
 
@@ -280,7 +287,7 @@ function createPlayer(vid){
 }
 window.onYouTubeIframeAPIReady=function(){if(window._ytPendingVid)createPlayer(window._ytPendingVid)};
 function enableControls(){
-  ['set-a-btn','set-b-btn','add-mark-btn','loop-btn','ov-a','ov-b','ov-loop','play-btn','back-a-btn','back5-btn','back10-btn','save-ab-btn','seek-bar','back05-btn'].forEach(id=>{const el=document.getElementById(id);if(el)el.disabled=false});
+  ['set-a-btn','set-b-btn','add-mark-btn','loop-btn','ov-a','ov-b','ov-loop','play-btn','back-a-btn','back5-btn','back10-btn','save-ab-btn','seek-bar','back05-btn','play-btn-main','loop-btn-main','back-a-btn2','back05-btn2','back5-btn2','back10-btn2','fwd5-btn2'].forEach(id=>{const el=document.getElementById(id);if(el)el.disabled=false});
 }
 function startTimeUpdate(){
   clearInterval(timeInterval);
@@ -415,11 +422,13 @@ function toggleLoop(){
   if(looping){
     loopBtn.innerHTML='<i class="ti ti-repeat"></i> ON';loopBtn.classList.add('active');
     ovLoop.classList.add('loop-on');ovLoop.innerHTML='<i class="ti ti-repeat"></i> ON';
+    const lm=document.getElementById('loop-btn-main');if(lm){lm.innerHTML='<i class="ti ti-repeat"></i> ON';lm.style.background='#1D9E75';lm.style.borderColor='#1D9E75';lm.style.color='#fff';}
     if(player&&playerReady)player.seekTo(a,true);
     loopInterval=setInterval(()=>{if(!player||!playerReady)return;const c=player.getCurrentTime();if(c>=b||c<a-1)player.seekTo(a,true)},300);
   }else{
     loopBtn.innerHTML='<i class="ti ti-repeat"></i> OFF';loopBtn.classList.remove('active');
     ovLoop.classList.remove('loop-on');ovLoop.innerHTML='<i class="ti ti-repeat"></i> ループ';
+    const lm=document.getElementById('loop-btn-main');if(lm){lm.innerHTML='<i class="ti ti-repeat"></i> OFF';lm.style.background='';lm.style.borderColor='';lm.style.color='';}
     clearInterval(loopInterval);
   }
   updateABStatus();
@@ -614,8 +623,17 @@ function onSeekBarEnd(v){
 function togglePlay(){
   if(!player||!playerReady)return;
   const state=player.getPlayerState();
-  if(state===1){player.pauseVideo();document.getElementById('play-btn').innerHTML='<i class="ti ti-player-play"></i> 再生'}
-  else{player.playVideo();document.getElementById('play-btn').innerHTML='<i class="ti ti-player-pause"></i> 一時停止'}
+  const pb=document.getElementById('play-btn');
+  const pm=document.getElementById('play-btn-main');
+  if(state===1){
+    player.pauseVideo();
+    if(pb)pb.innerHTML='<i class="ti ti-player-play"></i> 再生';
+    if(pm)pm.innerHTML='<i class="ti ti-player-play"></i> 再生';
+  }else{
+    player.playVideo();
+    if(pb)pb.innerHTML='<i class="ti ti-player-pause"></i> 一時停止';
+    if(pm)pm.innerHTML='<i class="ti ti-player-pause"></i> 一時停止';
+  }
 }
 function seekRel(sec){
   if(!player||!playerReady)return;
