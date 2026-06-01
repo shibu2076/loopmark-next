@@ -89,6 +89,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',sans-serif;ba
 <script type="module">
 import { initializeApp, getApps } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
 import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+import { getFirestore, doc, setDoc, getDoc, collection } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyDukP8QwIhPuM5BNoT2dBRot0dNWgPOGfU",
@@ -101,22 +102,52 @@ const firebaseConfig = {
 
 const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApps()[0];
 const auth = getAuth(app);
+const db = getFirestore(app);
 const provider = new GoogleAuthProvider();
+
+// Firestoreにマークを保存
+window._saveMarksToCloud = async (uid, marks) => {
+  try {
+    await setDoc(doc(db, 'users', uid), { marks: JSON.stringify(marks) }, { merge: true });
+  } catch(e) { console.error('保存失敗', e); }
+};
+
+// Firestoreからマークを読み込み
+window._loadMarksFromCloud = async (uid) => {
+  try {
+    const snap = await getDoc(doc(db, 'users', uid));
+    if (snap.exists() && snap.data().marks) {
+      return JSON.parse(snap.data().marks);
+    }
+  } catch(e) { console.error('読み込み失敗', e); }
+  return null;
+};
 
 window._firebaseAuth = auth;
 window._firebaseProvider = provider;
 window._firebaseSignIn = () => signInWithPopup(auth, provider);
 window._firebaseSignOut = () => signOut(auth);
 
-onAuthStateChanged(auth, (user) => {
+onAuthStateChanged(auth, async (user) => {
   const btn = document.getElementById('auth-btn');
   const avatar = document.getElementById('auth-avatar');
   if (!btn) return;
   if (user) {
     btn.style.display = 'none';
     avatar.style.display = 'flex';
-    avatar.querySelector('img').src = user.photoURL || '';
+    const img = avatar.querySelector('img');
+    img.src = user.photoURL || '';
+    img.referrerPolicy = 'no-referrer';
+    const menuName = document.getElementById('auth-menu-name');
+    if(menuName) menuName.textContent = user.displayName || user.email;
     avatar.querySelector('span').textContent = user.displayName || user.email;
+    // クラウドからマークを読み込み
+    const cloudMarks = await window._loadMarksFromCloud(user.uid);
+    if (cloudMarks) {
+      window.marks = cloudMarks;
+      localStorage.setItem('lm_marks', JSON.stringify(cloudMarks));
+      if (typeof renderMarks === 'function') renderMarks();
+    }
   } else {
     btn.style.display = 'flex';
     avatar.style.display = 'none';
@@ -126,6 +157,7 @@ onAuthStateChanged(auth, (user) => {
 <script type="module">
 import { initializeApp, getApps } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
 import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+import { getFirestore, doc, setDoc, getDoc, collection } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyDukP8QwIhPuM5BNoT2dBRot0dNWgPOGfU",
@@ -138,22 +170,52 @@ const firebaseConfig = {
 
 const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApps()[0];
 const auth = getAuth(app);
+const db = getFirestore(app);
 const provider = new GoogleAuthProvider();
+
+// Firestoreにマークを保存
+window._saveMarksToCloud = async (uid, marks) => {
+  try {
+    await setDoc(doc(db, 'users', uid), { marks: JSON.stringify(marks) }, { merge: true });
+  } catch(e) { console.error('保存失敗', e); }
+};
+
+// Firestoreからマークを読み込み
+window._loadMarksFromCloud = async (uid) => {
+  try {
+    const snap = await getDoc(doc(db, 'users', uid));
+    if (snap.exists() && snap.data().marks) {
+      return JSON.parse(snap.data().marks);
+    }
+  } catch(e) { console.error('読み込み失敗', e); }
+  return null;
+};
 
 window._firebaseAuth = auth;
 window._firebaseProvider = provider;
 window._firebaseSignIn = () => signInWithPopup(auth, provider);
 window._firebaseSignOut = () => signOut(auth);
 
-onAuthStateChanged(auth, (user) => {
+onAuthStateChanged(auth, async (user) => {
   const btn = document.getElementById('auth-btn');
   const avatar = document.getElementById('auth-avatar');
   if (!btn) return;
   if (user) {
     btn.style.display = 'none';
     avatar.style.display = 'flex';
-    avatar.querySelector('img').src = user.photoURL || '';
+    const img = avatar.querySelector('img');
+    img.src = user.photoURL || '';
+    img.referrerPolicy = 'no-referrer';
+    const menuName = document.getElementById('auth-menu-name');
+    if(menuName) menuName.textContent = user.displayName || user.email;
     avatar.querySelector('span').textContent = user.displayName || user.email;
+    // クラウドからマークを読み込み
+    const cloudMarks = await window._loadMarksFromCloud(user.uid);
+    if (cloudMarks) {
+      window.marks = cloudMarks;
+      localStorage.setItem('lm_marks', JSON.stringify(cloudMarks));
+      if (typeof renderMarks === 'function') renderMarks();
+    }
   } else {
     btn.style.display = 'flex';
     avatar.style.display = 'none';
@@ -163,6 +225,7 @@ onAuthStateChanged(auth, (user) => {
 <script type="module">
 import { initializeApp, getApps } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
 import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+import { getFirestore, doc, setDoc, getDoc, collection } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyDukP8QwIhPuM5BNoT2dBRot0dNWgPOGfU",
@@ -175,22 +238,52 @@ const firebaseConfig = {
 
 const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApps()[0];
 const auth = getAuth(app);
+const db = getFirestore(app);
 const provider = new GoogleAuthProvider();
+
+// Firestoreにマークを保存
+window._saveMarksToCloud = async (uid, marks) => {
+  try {
+    await setDoc(doc(db, 'users', uid), { marks: JSON.stringify(marks) }, { merge: true });
+  } catch(e) { console.error('保存失敗', e); }
+};
+
+// Firestoreからマークを読み込み
+window._loadMarksFromCloud = async (uid) => {
+  try {
+    const snap = await getDoc(doc(db, 'users', uid));
+    if (snap.exists() && snap.data().marks) {
+      return JSON.parse(snap.data().marks);
+    }
+  } catch(e) { console.error('読み込み失敗', e); }
+  return null;
+};
 
 window._firebaseAuth = auth;
 window._firebaseProvider = provider;
 window._firebaseSignIn = () => signInWithPopup(auth, provider);
 window._firebaseSignOut = () => signOut(auth);
 
-onAuthStateChanged(auth, (user) => {
+onAuthStateChanged(auth, async (user) => {
   const btn = document.getElementById('auth-btn');
   const avatar = document.getElementById('auth-avatar');
   if (!btn) return;
   if (user) {
     btn.style.display = 'none';
     avatar.style.display = 'flex';
-    avatar.querySelector('img').src = user.photoURL || '';
+    const img = avatar.querySelector('img');
+    img.src = user.photoURL || '';
+    img.referrerPolicy = 'no-referrer';
+    const menuName = document.getElementById('auth-menu-name');
+    if(menuName) menuName.textContent = user.displayName || user.email;
     avatar.querySelector('span').textContent = user.displayName || user.email;
+    // クラウドからマークを読み込み
+    const cloudMarks = await window._loadMarksFromCloud(user.uid);
+    if (cloudMarks) {
+      window.marks = cloudMarks;
+      localStorage.setItem('lm_marks', JSON.stringify(cloudMarks));
+      if (typeof renderMarks === 'function') renderMarks();
+    }
   } else {
     btn.style.display = 'flex';
     avatar.style.display = 'none';
@@ -208,9 +301,15 @@ onAuthStateChanged(auth, (user) => {
   <button id="auth-btn" onclick="window._firebaseSignIn && window._firebaseSignIn()" style="display:flex;align-items:center;gap:6px;padding:6px 12px;border-radius:7px;border:1px solid #ddd;background:#fff;color:#1a1a18;font-size:12px;cursor:pointer;white-space:nowrap">
     <img src="https://www.google.com/favicon.ico" width="14" height="14" alt="G"> ログイン
   </button>
-  <div id="auth-avatar" style="display:none;align-items:center;gap:6px;cursor:pointer" onclick="window._firebaseSignOut && window._firebaseSignOut()">
-    <img id="auth-photo" src="" width="28" height="28" style="border-radius:50%;border:1px solid #ddd" alt="avatar">
+  <div id="auth-avatar" style="display:none;align-items:center;gap:6px;cursor:pointer;position:relative" onclick="toggleAuthMenu()">
+    <img src="" width="28" height="28" style="border-radius:50%;border:1px solid #ddd" alt="avatar">
     <span style="font-size:12px;color:#1a1a18;max-width:80px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"></span>
+    <div id="auth-menu" style="display:none;position:absolute;top:36px;right:0;background:#fff;border:1px solid #e0e0de;border-radius:8px;box-shadow:0 4px 12px rgba(0,0,0,0.12);min-width:160px;z-index:999;overflow:hidden">
+      <div id="auth-menu-name" style="padding:10px 14px;font-size:12px;color:#888;border-bottom:1px solid #f0f0ee"></div>
+      <div onclick="event.stopPropagation();window._firebaseSignOut&&window._firebaseSignOut();toggleAuthMenu()" style="padding:10px 14px;font-size:13px;color:#E24B4A;cursor:pointer;display:flex;align-items:center;gap:8px">
+        <i class="ti ti-logout"></i> ログアウト
+      </div>
+    </div>
   </div>
   <button class="btn" onclick="openSearchWindow()" title="別ウィンドウで検索（YouTube・歌詞など）"><i class="ti ti-world-search"></i> 検索窓</button>
 </div>
@@ -546,6 +645,9 @@ function addMark(){
   marks[currentVideoId].push({t,label});
   marks[currentVideoId].sort((a,b)=>a.t-b.t);
   localStorage.setItem('lm_marks',JSON.stringify(marks));
+  // クラウドに保存
+  const user = window._firebaseAuth && window._firebaseAuth.currentUser;
+  if (user && window._saveMarksToCloud) window._saveMarksToCloud(user.uid, marks);
   document.getElementById('mark-label').value='';
   renderMarks();showToast('マーク: '+fmt(t));
 }
@@ -692,6 +794,9 @@ function saveAB(){
   marks[currentVideoId].push({t:a,tB:b,label,isAB:true});
   marks[currentVideoId].sort((x,y)=>x.t-y.t);
   localStorage.setItem('lm_marks',JSON.stringify(marks));
+  // クラウドに保存
+  const userAB = window._firebaseAuth && window._firebaseAuth.currentUser;
+  if (userAB && window._saveMarksToCloud) window._saveMarksToCloud(userAB.uid, marks);
   document.getElementById('mark-label').value='';
   renderMarks();showToast('AB保存: '+fmt(a)+' → '+fmt(b));
 }
@@ -755,6 +860,16 @@ function openSearchWindow(){
   if(!win) showToast('ポップアップを許可してください');
   else showToast('検索ウィンドウを開きました');
 }
+function toggleAuthMenu(){
+  const menu=document.getElementById('auth-menu');
+  if(!menu)return;
+  menu.style.display=menu.style.display==='none'?'block':'none';
+}
+document.addEventListener('click',function(e){
+  const avatar=document.getElementById('auth-avatar');
+  const menu=document.getElementById('auth-menu');
+  if(menu&&!avatar.contains(e.target))menu.style.display='none';
+});
 function showToast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');clearTimeout(t._tid);t._tid=setTimeout(()=>t.classList.remove('show'),2000)}
 const s=document.createElement('script');s.src='https://www.youtube.com/iframe_api';document.head.appendChild(s);
 document.getElementById('yt-url').addEventListener('keydown',function(e){if(e.key==='Enter')loadVideo();});
