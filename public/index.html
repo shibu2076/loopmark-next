@@ -91,8 +91,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',sans-serif;ba
 <!-- Top bar -->
 <div class="topbar">
   <div class="logo">Loop<span>Mark</span></div>
-  <input type="text" id="yt-url" class="url-input" placeholder="YouTubeのURL（通常・Shorts両対応）">
-  <button class="btn primary" onclick="loadVideo()"><i class="ti ti-player-play"></i> 読み込む</button>
+  <input type="text" id="yt-url" class="url-input" placeholder="YouTubeのURL" style="display:none">
   <button class="btn" id="btn-2pane" onclick="togglePane()"><i class="ti ti-brand-youtube"></i> YouTube検索</button>
   <button id="auth-btn" onclick="window._firebaseSignIn && window._firebaseSignIn()" style="display:flex;align-items:center;gap:6px;padding:6px 12px;border-radius:7px;border:1px solid #ddd;background:#fff;color:#1a1a18;font-size:12px;cursor:pointer;white-space:nowrap">
     <img src="https://www.google.com/favicon.ico" width="14" height="14" alt="G"> ログイン
@@ -114,6 +113,21 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',sans-serif;ba
   <!-- Left controls panel -->
   <div class="left-panel" id="left-panel">
     <!-- Speed -->
+    <!-- 検索・URL入力エリア -->
+    <div class="ctrl-section" style="padding:10px 12px">
+      <div style="display:flex;gap:6px;margin-bottom:6px">
+        <input type="text" id="search-url-input" placeholder="曲名・アーティスト または YouTube URL" style="flex:1;padding:8px 10px;border:1px solid #ddd;border-radius:8px;font-size:12px;outline:none;font-family:inherit;min-width:0" onkeydown="if(event.key==='Enter')handleSearchOrLoad()">
+        <button class="btn primary" onclick="handleSearchOrLoad()" style="padding:8px 12px;font-size:12px;flex-shrink:0">検索</button>
+      </div>
+      <!-- 検索結果 -->
+      <div id="search-results-wrap" style="display:none">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
+          <span id="search-results-toggle" onclick="toggleSearchResults()" style="font-size:11px;color:#1D9E75;cursor:pointer;font-weight:600">▼ 検索結果</span>
+          <button onclick="clearSearchResults()" style="font-size:10px;color:#aaa;border:none;background:none;cursor:pointer;padding:0">✕ クリア</button>
+        </div>
+        <div id="search-results-list" style="display:flex;flex-direction:column;gap:6px;max-height:200px;overflow-y:auto"></div>
+      </div>
+    </div>
     <div style="display:flex;justify-content:flex-end;padding:6px 8px 0">
       <button id="btn-left" onclick="toggleLeft()" style="width:26px;height:26px;background:#e8e8e6;border:1px solid #ccc;border-radius:6px;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0;color:#444">
         <i class="ti ti-chevron-left" id="left-icon" style="font-size:13px"></i>
@@ -733,6 +747,70 @@ function loadYtSearchResult(videoId){
   document.getElementById('yt-url').value='https://www.youtube.com/watch?v='+videoId;
   loadVideo();
   showToast('動画を読み込みました');
+}
+function handleSearchOrLoad(){
+  const val=document.getElementById('search-url-input').value.trim();
+  if(!val)return;
+  // URLかどうか判定
+  if(val.includes('youtube.com')||val.includes('youtu.be')){
+    document.getElementById('yt-url').value=val;
+    loadVideo();
+    // 検索結果を折りたたむ
+    const list=document.getElementById('search-results-list');
+    if(list&&list.children.length>0){
+      list.style.display='none';
+      document.getElementById('search-results-toggle').textContent='▶ 検索結果';
+    }
+  }else{
+    // YouTube検索
+    searchYoutubeInPanel(val);
+  }
+}
+async function searchYoutubeInPanel(q){
+  const wrap=document.getElementById('search-results-wrap');
+  const list=document.getElementById('search-results-list');
+  wrap.style.display='block';
+  list.style.display='flex';
+  document.getElementById('search-results-toggle').textContent='▼ 検索結果';
+  list.innerHTML='<p style="color:#aaa;font-size:12px;text-align:center;padding:10px">検索中...</p>';
+  try{
+    const res=await fetch('/api/youtube?q='+encodeURIComponent(q));
+    const data=await res.json();
+    if(!data.items||!data.items.length){list.innerHTML='<p style="color:#aaa;font-size:12px;text-align:center;padding:10px">結果なし</p>';return;}
+    list.innerHTML=data.items.map(item=>`
+      <div onclick="loadFromSearch('${item.id.videoId}')" style="display:flex;gap:8px;padding:6px;border-radius:8px;cursor:pointer;border:1px solid #e8e8e6;background:#fff" onmouseover="this.style.borderColor='#1D9E75'" onmouseout="this.style.borderColor='#e8e8e6'">
+        <img src="${item.snippet.thumbnails.default.url}" width="72" height="54" style="border-radius:4px;object-fit:cover;flex-shrink:0">
+        <div style="flex:1;min-width:0">
+          <p style="font-size:11px;font-weight:600;color:#1a1a18;margin-bottom:2px;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical">${item.snippet.title}</p>
+          <p style="font-size:10px;color:#888">${item.snippet.channelTitle}</p>
+        </div>
+      </div>
+    `).join('');
+  }catch(e){list.innerHTML='<p style="color:#E24B4A;font-size:12px;text-align:center;padding:10px">検索失敗</p>';}
+}
+function loadFromSearch(videoId){
+  document.getElementById('yt-url').value='https://www.youtube.com/watch?v='+videoId;
+  loadVideo();
+  // 結果を折りたたむ
+  document.getElementById('search-results-list').style.display='none';
+  document.getElementById('search-results-toggle').textContent='▶ 検索結果（クリックで展開）';
+  showToast('動画を読み込みました');
+}
+function toggleSearchResults(){
+  const list=document.getElementById('search-results-list');
+  const toggle=document.getElementById('search-results-toggle');
+  if(list.style.display==='none'){
+    list.style.display='flex';
+    toggle.textContent='▼ 検索結果';
+  }else{
+    list.style.display='none';
+    toggle.textContent='▶ 検索結果（クリックで展開）';
+  }
+}
+function clearSearchResults(){
+  document.getElementById('search-results-wrap').style.display='none';
+  document.getElementById('search-results-list').innerHTML='';
+  document.getElementById('search-url-input').value='';
 }
 function toggleAuthMenu(){
   const menu=document.getElementById('auth-menu');
