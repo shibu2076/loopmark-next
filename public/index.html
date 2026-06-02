@@ -23,7 +23,15 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',sans-serif;ba
 .btn:disabled{opacity:0.4;cursor:default;pointer-events:none}
 
 .content{display:flex;flex:1;overflow:hidden}
-.left-panel{display:flex;flex-direction:column;width:340px;flex-shrink:0;border-right:1px solid #e8e8e6;overflow-y:auto;background:#fff}
+.tab-bar{display:flex;flex-direction:column;width:48px;flex-shrink:0;background:#f0f0ee;border-right:1px solid #e8e8e6;align-items:center;padding:8px 0;gap:4px;z-index:10}
+.tab-btn{width:40px;height:40px;border-radius:8px;border:none;background:none;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:18px;color:#888;transition:all 0.1s}
+.tab-btn:hover{background:#e0e0de;color:#1a1a18}
+.tab-btn.active{background:#1D9E75;color:#fff}
+.tab-btn.close-btn{color:#aaa;font-size:14px;margin-top:auto}
+.left-panel{display:flex;flex-direction:column;width:300px;flex-shrink:0;border-right:1px solid #e8e8e6;overflow-y:auto;background:#fff;transition:width 0.2s}
+.left-panel.hidden{width:0;overflow:hidden}
+.tab-content{display:none;flex-direction:column;flex:1}
+.tab-content.active{display:flex}
 .video-area{flex:1;display:flex;flex-direction:column;background:#111;position:relative}
 .right-panel{width:0;flex-shrink:0;border-left:1px solid #e8e8e6;overflow:hidden;transition:width 0.2s;background:#f8f8f6}
 .right-panel.visible{width:340px}
@@ -110,10 +118,25 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',sans-serif;ba
 </div>
 
 <div class="content" style="position:relative">
+  <!-- Tab bar -->
+  <div class="tab-bar" id="tab-bar">
+    <button class="tab-btn active" id="tab-btn-control" onclick="switchTab('control')" title="操作">
+      <i class="ti ti-player-play"></i>
+    </button>
+    <button class="tab-btn" id="tab-btn-search" onclick="switchTab('search')" title="検索">
+      <i class="ti ti-search"></i>
+    </button>
+    <button class="tab-btn" id="tab-btn-marks" onclick="switchTab('marks')" title="マーク">
+      <i class="ti ti-bookmark"></i>
+    </button>
+    <button class="tab-btn close-btn" onclick="closePanel()" title="閉じる">
+      <i class="ti ti-x"></i>
+    </button>
+  </div>
   <!-- Left controls panel -->
   <div class="left-panel" id="left-panel">
-    <!-- Speed -->
-    <!-- 検索・URL入力エリア -->
+    <!-- 検索タブ -->
+    <div class="tab-content active" id="tab-content-search">
     <div class="ctrl-section" style="padding:10px 12px">
       <div style="display:flex;gap:6px;margin-bottom:6px">
         <input type="text" id="search-url-input" placeholder="曲名・アーティスト または YouTube URL" style="flex:1;padding:8px 10px;border:1px solid #ddd;border-radius:8px;font-size:12px;outline:none;font-family:inherit;min-width:0" onkeydown="if(event.key==='Enter')handleSearchOrLoad()">
@@ -128,6 +151,9 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',sans-serif;ba
         <div id="search-results-list" style="display:flex;flex-direction:column;gap:6px;max-height:200px;overflow-y:auto"></div>
       </div>
     </div>
+    </div><!-- /tab-content-search -->
+    <!-- 操作タブ -->
+    <div class="tab-content" id="tab-content-control">
     <div style="display:flex;justify-content:flex-end;padding:6px 8px 0">
       <button id="btn-left" onclick="toggleLeft()" style="width:26px;height:26px;background:#e8e8e6;border:1px solid #ccc;border-radius:6px;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0;color:#444">
         <i class="ti ti-chevron-left" id="left-icon" style="font-size:13px"></i>
@@ -191,7 +217,9 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',sans-serif;ba
       <div class="ab-status-sm" id="ab-status">A・B点をセットするとループ再生できます</div>
     </div>
 
-    <!-- Marks -->
+    </div><!-- /tab-content-control -->
+    <!-- マークタブ -->
+    <div class="tab-content" id="tab-content-marks">
     <div class="ctrl-section">
       <div class="ctrl-label">マークポイント</div>
       <div class="mark-list" id="mark-list">
@@ -200,6 +228,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',sans-serif;ba
 
 
     </div>
+    </div><!-- /tab-content-marks -->
   </div>
 
   <!-- Video area -->
@@ -812,6 +841,37 @@ function clearSearchResults(){
   document.getElementById('search-results-wrap').style.display='none';
   document.getElementById('search-results-list').innerHTML='';
   document.getElementById('search-url-input').value='';
+}
+// タブ切り替え
+let currentTab = 'control';
+function switchTab(tab){
+  const panel = document.getElementById('left-panel');
+  if(currentTab === tab && !panel.classList.contains('hidden')){
+    // 同じタブをタップ → 閉じる
+    closePanel();
+    return;
+  }
+  currentTab = tab;
+  panel.classList.remove('hidden');
+  // タブボタンのactive切り替え
+  ['control','search','marks'].forEach(t=>{
+    const btn = document.getElementById('tab-btn-'+t);
+    if(btn) btn.classList.toggle('active', t===tab);
+  });
+  // タブコンテンツ切り替え
+  ['control','search','marks'].forEach(t=>{
+    const el = document.getElementById('tab-content-'+t);
+    if(el) el.classList.toggle('active', t===tab);
+  });
+}
+function closePanel(){
+  const panel = document.getElementById('left-panel');
+  panel.classList.add('hidden');
+  ['control','search','marks'].forEach(t=>{
+    const btn = document.getElementById('tab-btn-'+t);
+    if(btn) btn.classList.remove('active');
+  });
+  currentTab = null;
 }
 function toggleAuthMenu(){
   const menu=document.getElementById('auth-menu');
