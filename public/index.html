@@ -181,9 +181,13 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',sans-serif;ba
         <button class="btn" style="font-size:11px;padding:5px 8px" onclick="setPoint('A')" id="set-a-btn" disabled>A点セット</button>
         <button class="btn" style="font-size:11px;padding:5px 8px" onclick="setPoint('B')" id="set-b-btn" disabled>B点セット</button>
         <button class="btn danger" style="font-size:11px;padding:5px 8px" onclick="clearAB()">クリア</button>
+        <button class="btn" id="save-ab-btn" onclick="saveAB()" disabled style="font-size:11px;padding:5px 8px"><i class="ti ti-repeat"></i> AB保存</button>
         <button id="loop-btn" style="display:none" onclick="toggleLoop()"></button>
       </div>
-
+      <div style="display:flex;gap:5px;margin-bottom:5px">
+        <input type="text" id="mark-label" placeholder="メモ（例: サビの入り）" style="flex:1;padding:5px 8px;border:1px solid #ddd;border-radius:7px;font-size:12px;outline:none;font-family:inherit;min-width:0">
+        <button class="btn" id="add-mark-btn" onclick="addMark()" disabled style="font-size:11px;padding:5px 8px;flex-shrink:0"><i class="ti ti-bookmark"></i> 今の位置</button>
+      </div>
       <div class="ab-status-sm" id="ab-status">A・B点をセットするとループ再生できます</div>
     </div>
 
@@ -193,11 +197,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',sans-serif;ba
       <div class="mark-list" id="mark-list">
         <div class="empty-marks">まだマークがありません</div>
       </div>
-      <div class="add-mark-row" style="margin-bottom:5px">
-        <input type="text" id="mark-label" placeholder="メモ（例: サビの入り）">
-        <button class="btn" id="add-mark-btn" onclick="addMark()" disabled style="font-size:11px;padding:5px 8px"><i class="ti ti-bookmark"></i> 今の位置</button>
-      </div>
-      <button class="btn" id="save-ab-btn" onclick="saveAB()" disabled style="font-size:11px;padding:5px 8px;width:100%"><i class="ti ti-repeat"></i> 現在のAB点を保存</button>
+
+
     </div>
   </div>
 
