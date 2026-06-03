@@ -515,12 +515,15 @@ function renderMarks(){
     const data=marks[vid];
     const isCurrent=vid===currentVideoId;
     const vidLabel=videoTitles[vid]||('ID:'+vid.substring(0,8));
+    const isOpen=isCurrent;
     html+=`<div style="margin-bottom:8px">
-      <div style="display:flex;align-items:center;gap:6px;padding:5px 6px;background:${isCurrent?'#1a1a18':'#f0f0ee'};border-radius:7px;cursor:pointer;margin-bottom:4px" onclick="switchVideo('${vid}')">
+      <div style="display:flex;align-items:center;gap:6px;padding:5px 6px;background:${isCurrent?'#1a1a18':'#f0f0ee'};border-radius:7px;cursor:pointer;margin-bottom:4px" onclick="toggleMarkVid('${vid}',this)">
         <i class="ti ti-brand-youtube" style="color:${isCurrent?'#1D9E75':'#888'};font-size:13px"></i>
         <span style="font-size:11px;font-weight:600;color:${isCurrent?'#fff':'#555'};flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${vidLabel}</span>
+        <span style="font-size:10px;color:${isCurrent?'#aaa':'#999'}">${data.length}件</span>
+        <i class="ti ${isOpen?'ti-chevron-up':'ti-chevron-down'}" style="font-size:11px;color:${isCurrent?'#aaa':'#999'}"></i>
       </div>
-      <div style="padding-left:12px;border-left:2px solid #e0e0de;margin-left:6px;display:flex;flex-direction:column;gap:4px">
+      <div id="mark-vid-${vid}" style="padding-left:12px;border-left:2px solid #e0e0de;margin-left:6px;display:${isOpen?'flex':'none'};flex-direction:column;gap:4px">
         ${data.map((m,i)=>m.isAB?
           `<div class="mark-item" onclick="loadABForVid('${vid}',${m.t},${m.tB})" style="border-left:3px solid #1D9E75">
             <span class="m-time" style="color:#1D9E75;font-size:10px">${fmt(m.t)}<br>→${fmt(m.tB)}</span>
@@ -539,6 +542,15 @@ function renderMarks(){
   });
   list.innerHTML=html;
 }
+function toggleMarkVid(vid, headerEl){
+  const content=document.getElementById('mark-vid-'+vid);
+  if(!content)return;
+  const isOpen=content.style.display!=='none';
+  content.style.display=isOpen?'none':'flex';
+  const icon=headerEl.querySelector('i.ti-chevron-up, i.ti-chevron-down');
+  if(icon){icon.className=isOpen?'ti ti-chevron-down':'ti ti-chevron-up';}
+  if(!isOpen&&vid!==currentVideoId){switchVideo(vid);}
+}
 function switchVideo(vid){
   if(vid===currentVideoId)return;
   document.getElementById('yt-url').value='https://www.youtube.com/watch?v='+vid;
@@ -556,6 +568,9 @@ function deleteMarkForVid(vid,i){
   marks[vid].splice(i,1);
   if(!marks[vid].length)delete marks[vid];
   localStorage.setItem('lm_marks',JSON.stringify(marks));
+  // Firestoreにも保存
+  const u=window._firebaseAuth&&window._firebaseAuth.currentUser;
+  if(u&&window._saveMarksToCloud)window._saveMarksToCloud(u.uid,marks);
   renderMarks();
 }
 function editMarkLabelForVid(vid,i,el){
