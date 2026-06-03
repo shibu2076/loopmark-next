@@ -135,6 +135,20 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',sans-serif;ba
   </div>
   <!-- Left controls panel -->
   <div class="left-panel" id="left-panel">
+    <!-- 共通：再生ボタン（全タブで表示） -->
+    <div style="padding:8px 12px;border-bottom:1px solid #f0f0ee;background:#fff;flex-shrink:0">
+      <div style="display:flex;gap:6px;margin-bottom:6px">
+        <button id="play-btn-main" onclick="togglePlay()" disabled style="flex:2;padding:10px;border-radius:8px;border:1px solid #1D9E75;background:#1D9E75;color:#fff;font-size:15px;font-weight:700;cursor:pointer;font-family:inherit;display:flex;align-items:center;justify-content:center;gap:6px"><i class="ti ti-player-play"></i> 再生</button>
+        <button id="loop-btn-main" onclick="toggleLoop()" disabled style="flex:1;padding:10px;border-radius:8px;border:1px solid #ddd;background:#fff;font-size:11px;cursor:pointer;font-family:inherit;display:flex;align-items:center;justify-content:center;gap:4px"><i class="ti ti-repeat"></i> OFF</button>
+        <button onclick="backToA()" id="back-a-btn2" disabled style="flex:1;padding:10px;border-radius:8px;border:1px solid #ddd;background:#fff;font-size:11px;cursor:pointer;font-family:inherit">A点へ</button>
+      </div>
+      <div style="display:flex;gap:4px">
+        <button onclick="seekRel(-0.5)" id="back05-btn2" disabled style="flex:1;padding:6px 2px;border-radius:7px;border:1px solid #ddd;background:#f5f5f3;font-size:11px;cursor:pointer;font-family:inherit">−0.5秒</button>
+        <button onclick="seekRel(-5)" id="back5-btn2" disabled style="flex:1;padding:6px 2px;border-radius:7px;border:1px solid #ddd;background:#f5f5f3;font-size:11px;cursor:pointer;font-family:inherit">−5秒</button>
+        <button onclick="seekRel(-10)" id="back10-btn2" disabled style="flex:1;padding:6px 2px;border-radius:7px;border:1px solid #ddd;background:#f5f5f3;font-size:11px;cursor:pointer;font-family:inherit">−10秒</button>
+        <button onclick="seekRel(5)" id="fwd5-btn2" disabled style="flex:1;padding:6px 2px;border-radius:7px;border:1px solid #ddd;background:#f5f5f3;font-size:11px;cursor:pointer;font-family:inherit">+5秒</button>
+      </div>
+    </div>
     <!-- 検索タブ -->
     <div class="tab-content" id="tab-content-search">
     <div class="ctrl-section" style="padding:10px 12px">
@@ -154,24 +168,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',sans-serif;ba
     </div><!-- /tab-content-search -->
     <!-- 操作タブ -->
     <div class="tab-content active" id="tab-content-control">
-    <div style="display:flex;justify-content:flex-end;padding:6px 8px 0">
-      <button id="btn-left" onclick="toggleLeft()" style="width:26px;height:26px;background:#e8e8e6;border:1px solid #ccc;border-radius:6px;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0;color:#444">
-        <i class="ti ti-chevron-left" id="left-icon" style="font-size:13px"></i>
-      </button>
-    </div>
-    <div class="ctrl-section" style="padding-bottom:8px">
-      <div style="display:flex;gap:6px;margin-bottom:10px">
-        <button id="play-btn-main" onclick="togglePlay()" disabled style="flex:2;padding:10px;border-radius:8px;border:1px solid #1D9E75;background:#1D9E75;color:#fff;font-size:15px;font-weight:700;cursor:pointer;font-family:inherit;display:flex;align-items:center;justify-content:center;gap:6px"><i class="ti ti-player-play"></i> 再生</button>
-        <button id="loop-btn-main" onclick="toggleLoop()" disabled style="flex:1;padding:10px;border-radius:8px;border:1px solid #ddd;background:#fff;font-size:11px;cursor:pointer;font-family:inherit;display:flex;align-items:center;justify-content:center;gap:4px"><i class="ti ti-repeat"></i> OFF</button>
-        <button onclick="backToA()" id="back-a-btn2" disabled style="flex:1;padding:10px;border-radius:8px;border:1px solid #ddd;background:#fff;font-size:11px;cursor:pointer;font-family:inherit">A点へ</button>
-      </div>
-      <div style="display:flex;gap:4px;margin-bottom:2px">
-        <button onclick="seekRel(-0.5)" id="back05-btn2" disabled style="flex:1;padding:6px 2px;border-radius:7px;border:1px solid #ddd;background:#f5f5f3;font-size:11px;cursor:pointer;font-family:inherit">−0.5秒</button>
-        <button onclick="seekRel(-5)" id="back5-btn2" disabled style="flex:1;padding:6px 2px;border-radius:7px;border:1px solid #ddd;background:#f5f5f3;font-size:11px;cursor:pointer;font-family:inherit">−5秒</button>
-        <button onclick="seekRel(-10)" id="back10-btn2" disabled style="flex:1;padding:6px 2px;border-radius:7px;border:1px solid #ddd;background:#f5f5f3;font-size:11px;cursor:pointer;font-family:inherit">−10秒</button>
-        <button onclick="seekRel(5)" id="fwd5-btn2" disabled style="flex:1;padding:6px 2px;border-radius:7px;border:1px solid #ddd;background:#f5f5f3;font-size:11px;cursor:pointer;font-family:inherit">+5秒</button>
-      </div>
-    </div>
+
+
     <div class="ctrl-section">
       <div class="ctrl-label">再生速度</div>
       <div class="speed-num" id="speed-num">1.00x</div>
