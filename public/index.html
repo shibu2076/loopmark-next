@@ -205,7 +205,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',sans-serif;ba
         <button class="btn" style="font-size:11px;padding:5px 8px" onclick="setPoint('A')" id="set-a-btn" disabled>A点セット</button>
         <button class="btn" style="font-size:11px;padding:5px 8px" onclick="setPoint('B')" id="set-b-btn" disabled>B点セット</button>
         <button class="btn danger" style="font-size:11px;padding:5px 8px" onclick="clearAB()">クリア</button>
-        <button class="btn" id="save-ab-btn" onclick="saveAB()" disabled style="font-size:11px;padding:5px 8px"><i class="ti ti-repeat"></i> AB保存</button>
+        <button id="save-ab-btn" onclick="saveAB()" disabled style="display:none;padding:8px 12px;border-radius:8px;border:none;background:#1D9E75;color:#fff;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;white-space:nowrap;display:none"><i class="ti ti-device-floppy"></i> AB保存</button>
         <button id="loop-btn" style="display:none" onclick="toggleLoop()"></button>
       </div>
       <div style="display:flex;gap:5px;margin-bottom:5px">
@@ -914,6 +914,8 @@ const s=document.createElement('script');s.src='https://www.youtube.com/iframe_a
     if(user){
       btn.style.display='none';
       avatar.style.display='flex';
+      const saveBtn=document.getElementById('save-ab-btn');
+      if(saveBtn)saveBtn.style.display='inline-flex';
       const img=avatar.querySelector('img');
       img.src=user.photoURL||'';
       img.referrerPolicy='no-referrer';
@@ -933,6 +935,8 @@ const s=document.createElement('script');s.src='https://www.youtube.com/iframe_a
     }else{
       btn.style.display='flex';
       avatar.style.display='none';
+      const saveBtn=document.getElementById('save-ab-btn');
+      if(saveBtn)saveBtn.style.display='none';
     }
   });
 })();
