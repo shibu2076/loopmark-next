@@ -79,7 +79,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',sans-serif;ba
 .ab-status-sm.on{color:#1D9E75;font-weight:500}
 
 /* Marks */
-.mark-list{display:flex;flex-direction:column;gap:4px;max-height:260px;overflow-y:auto;margin-bottom:6px}
+.mark-list{display:flex;flex-direction:column;gap:4px;max-height:calc(100vh - 120px);overflow-y:auto;margin-bottom:6px}
 .mark-item{display:flex;align-items:center;gap:6px;padding:5px 8px;border-radius:7px;border:1px solid #e8e8e6;background:#fafaf8;cursor:pointer}
 .mark-item:hover{border-color:#1D9E75;background:#f0faf6}
 .m-time{font-family:monospace;font-size:11px;color:#1D9E75;min-width:44px}
@@ -136,7 +136,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',sans-serif;ba
   <!-- Left controls panel -->
   <div class="left-panel" id="left-panel">
     <!-- 検索タブ -->
-    <div class="tab-content active" id="tab-content-search">
+    <div class="tab-content" id="tab-content-search">
     <div class="ctrl-section" style="padding:10px 12px">
       <div style="display:flex;gap:6px;margin-bottom:6px">
         <input type="text" id="search-url-input" placeholder="曲名・アーティスト または YouTube URL" style="flex:1;padding:8px 10px;border:1px solid #ddd;border-radius:8px;font-size:12px;outline:none;font-family:inherit;min-width:0" onkeydown="if(event.key==='Enter')handleSearchOrLoad()">
@@ -148,12 +148,12 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',sans-serif;ba
           <span id="search-results-toggle" onclick="toggleSearchResults()" style="font-size:11px;color:#1D9E75;cursor:pointer;font-weight:600">▼ 検索結果</span>
           <button onclick="clearSearchResults()" style="font-size:10px;color:#aaa;border:none;background:none;cursor:pointer;padding:0">✕ クリア</button>
         </div>
-        <div id="search-results-list" style="display:flex;flex-direction:column;gap:6px;max-height:200px;overflow-y:auto"></div>
+        <div id="search-results-list" style="display:flex;flex-direction:column;gap:6px;max-height:calc(100vh - 200px);overflow-y:auto"></div>
       </div>
     </div>
     </div><!-- /tab-content-search -->
     <!-- 操作タブ -->
-    <div class="tab-content" id="tab-content-control">
+    <div class="tab-content active" id="tab-content-control">
     <div style="display:flex;justify-content:flex-end;padding:6px 8px 0">
       <button id="btn-left" onclick="toggleLeft()" style="width:26px;height:26px;background:#e8e8e6;border:1px solid #ccc;border-radius:6px;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0;color:#444">
         <i class="ti ti-chevron-left" id="left-icon" style="font-size:13px"></i>
