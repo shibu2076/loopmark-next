@@ -605,6 +605,11 @@ function editMarkLabel(i,el){
   });
 }
 function loadAB(a,b){
+  if(looping){looping=false;clearInterval(loopInterval);
+    const lm=document.getElementById('loop-btn-main');
+    if(lm){lm.innerHTML='<i class="ti ti-repeat"></i> OFF';lm.style.background='';lm.style.borderColor='';lm.style.color='';}
+    updateABStatus();
+  }
   abA=a;abB=b;
   document.getElementById('ab-pt-a').classList.add('set');
   document.getElementById('ab-pt-b').classList.add('set');
