@@ -666,7 +666,16 @@ function saveAB(){
   const uAB=window._firebaseAuth&&window._firebaseAuth.currentUser;
   if(uAB&&window._saveMarksToCloud)window._saveMarksToCloud(uAB.uid,marks);
   document.getElementById('mark-label').value='';
-  renderMarks();showToast('AB保存: '+fmt(a)+' → '+fmt(b));
+  renderMarks();
+  showToast('AB保存: '+fmt(a)+' → '+fmt(b));
+  // ボタン近くに一瞬表示
+  const saveBtn=document.getElementById('save-ab-btn');
+  if(saveBtn){
+    const orig=saveBtn.innerHTML;
+    saveBtn.innerHTML='<i class="ti ti-check"></i> 保存済';
+    saveBtn.style.background='#0F6E56';
+    setTimeout(()=>{saveBtn.innerHTML=orig;saveBtn.style.background='#1D9E75';},2000);
+  }
 
 }
 
