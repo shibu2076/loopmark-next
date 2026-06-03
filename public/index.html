@@ -525,12 +525,16 @@ function renderMarks(){
       </div>
       <div id="mark-vid-${vid}" style="padding-left:12px;border-left:2px solid #e0e0de;margin-left:6px;display:${isOpen?'flex':'none'};flex-direction:column;gap:4px">
         ${data.map((m,i)=>m.isAB?
-          `<div class="mark-item" onclick="loadABForVid('${vid}',${m.t},${m.tB})" style="border-left:3px solid #1D9E75">
-            <span class="m-time" style="color:#1D9E75;font-size:10px">${fmt(m.t)}<br>→${fmt(m.tB)}</span>
-            <span class="m-label" ondblclick="event.stopPropagation();editMarkLabelForVid('${vid}',${i},this)">${m.label}</span>
-            <button class="m-del" onclick="event.stopPropagation();shareMarkForVid('${vid}',${m.t},${m.tB},'${m.label}')" style="font-size:12px;color:#1D9E75;border:none;background:none;cursor:pointer;padding:0 2px" title="共有">⬆</button>
-            <button class="m-del" onclick="event.stopPropagation();deleteMarkForVid('${vid}',${i})">✕</button>
-          </div>`:
+          (()=>{
+            const isPlaying=isCurrent&&abA===m.t&&abB===m.tB;
+            return `<div class="mark-item" onclick="loadABForVid('${vid}',${m.t},${m.tB})" style="border-left:3px solid #1D9E75;background:${isPlaying?'#E1F5EE':''}">
+              ${isPlaying?'<i class="ti ti-player-play" style="color:#1D9E75;font-size:11px;flex-shrink:0"></i>':''}
+              <span class="m-time" style="color:#1D9E75;font-size:10px">${fmt(m.t)}<br>→${fmt(m.tB)}</span>
+              <span class="m-label" ondblclick="event.stopPropagation();editMarkLabelForVid('${vid}',${i},this)">${m.label}</span>
+              <button class="m-del" onclick="event.stopPropagation();shareMarkForVid('${vid}',${m.t},${m.tB},'${m.label}')" style="font-size:12px;color:#1D9E75;border:none;background:none;cursor:pointer;padding:0 2px" title="共有">⬆</button>
+              <button class="m-del" onclick="event.stopPropagation();deleteMarkForVid('${vid}',${i})">✕</button>
+            </div>`;
+          })():
           `<div class="mark-item" onclick="jumpToMarkForVid('${vid}',${m.t})">
             <span class="m-time">${fmt(m.t)}</span>
             <span class="m-label" ondblclick="event.stopPropagation();editMarkLabelForVid('${vid}',${i},this)">${m.label}</span>
@@ -561,8 +565,8 @@ function jumpToMarkForVid(vid,t){
   else{if(player&&playerReady)player.seekTo(t,true);}
 }
 function loadABForVid(vid,a,b){
-  if(vid!==currentVideoId){switchVideo(vid);setTimeout(()=>loadAB(a,b),2500);}
-  else{loadAB(a,b);}
+  if(vid!==currentVideoId){switchVideo(vid);setTimeout(()=>{loadAB(a,b);renderMarks();},2500);}
+  else{loadAB(a,b);renderMarks();}
 }
 function deleteMarkForVid(vid,i){
   marks[vid].splice(i,1);
